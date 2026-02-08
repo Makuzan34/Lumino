@@ -1,5 +1,5 @@
 
-import { Category, Habit, Challenge, HeroicTitle } from './types';
+import { Category, Habit, Challenge, HeroicTitle, Rarity } from './types';
 
 export const XP_PER_HABIT = 15;
 export const XP_PER_CHALLENGE_DAY = 50;
@@ -7,144 +7,348 @@ export const XP_CHALLENGE_COMPLETE = 200;
 export const MAX_LEVEL = 100;
 
 export const GET_RANK = (level: number): string => {
-  if (level >= 100) return 'Divinité de Lumino 🌌';
-  if (level >= 80) return 'Archi-Maître de l\'Existence';
-  if (level >= 60) return 'Gardien de l\'Équilibre';
-  if (level >= 40) return 'Adepte de la Clarté';
-  if (level >= 20) return 'Voyageur de l\'Esprit';
-  return 'Novice de Lumino';
+  if (level >= 100) return 'Divinité de l\'Ordre Éternel 🌌';
+  if (level >= 80) return 'Grand Maître de l\'Équilibre';
+  if (level >= 60) return 'Seigneur de la Discipline';
+  if (level >= 40) return 'Chevalier de la Lumière';
+  if (level >= 20) return 'Éclaireur des Terres Neuves';
+  return 'Aventurier de Lumino';
 };
 
-export const HEROIC_TITLES: HeroicTitle[] = [
-  // --- NIVEAUX ---
-  { id: 't1', name: 'Le Nouveau-Né', description: 'Atteindre le niveau 1.', rarity: 'common', condition: (s) => s.level >= 1 },
-  { id: 't2', name: 'L\'Éveillé', description: 'Atteindre le niveau 5.', rarity: 'common', condition: (s) => s.level >= 5 },
-  { id: 't3', name: 'Le Résolu', description: 'Atteindre le niveau 10.', rarity: 'common', condition: (s) => s.level >= 10 },
-  { id: 't4', name: 'Le Chercheur', description: 'Atteindre le niveau 15.', rarity: 'rare', condition: (s) => s.level >= 15 },
-  { id: 't5', name: 'Le Voyageur Astral', description: 'Atteindre le niveau 20.', rarity: 'rare', condition: (s) => s.level >= 20 },
-  { id: 't6', name: 'L\'Esprit Libre', description: 'Atteindre le niveau 25.', rarity: 'rare', condition: (s) => s.level >= 25 },
-  { id: 't7', name: 'Le Maître des Sens', description: 'Atteindre le niveau 30.', rarity: 'rare', condition: (s) => s.level >= 30 },
-  { id: 't8', name: 'Le Protecteur', description: 'Atteindre le niveau 35.', rarity: 'epic', condition: (s) => s.level >= 35 },
-  { id: 't9', name: 'L\'Oracle du Matin', description: 'Atteindre le niveau 40.', rarity: 'epic', condition: (s) => s.level >= 40 },
-  { id: 't10', name: 'Le Sage de l\'Ordre', description: 'Atteindre le niveau 45.', rarity: 'epic', condition: (s) => s.level >= 45 },
-  { id: 't11', name: 'L\'Avatar Solaire', description: 'Atteindre le niveau 50.', rarity: 'epic', condition: (s) => s.level >= 50 },
-  { id: 't12', name: 'Le Phénix d\'Or', description: 'Atteindre le niveau 55.', rarity: 'epic', condition: (s) => s.level >= 55 },
-  { id: 't13', name: 'Le Veilleur d\'Émeraude', description: 'Atteindre le niveau 60.', rarity: 'legendary', condition: (s) => s.level >= 60 },
-  { id: 't14', name: 'Le Roi des Habitudes', description: 'Atteindre le niveau 65.', rarity: 'legendary', condition: (s) => s.level >= 65 },
-  { id: 't15', name: 'L\'Empereur du Focus', description: 'Atteindre le niveau 70.', rarity: 'legendary', condition: (s) => s.level >= 70 },
-  { id: 't16', name: 'Le Demi-Dieu', description: 'Atteindre le niveau 75.', rarity: 'legendary', condition: (s) => s.level >= 75 },
-  { id: 't17', name: 'Le Maître de l\'Aura', description: 'Atteindre le niveau 80.', rarity: 'legendary', condition: (s) => s.level >= 80 },
-  { id: 't18', name: 'Le Souverain Absolu', description: 'Atteindre le niveau 85.', rarity: 'legendary', condition: (s) => s.level >= 85 },
-  { id: 't19', name: 'L\'Entité de Lumière', description: 'Atteindre le niveau 90.', rarity: 'legendary', condition: (s) => s.level >= 90 },
-  { id: 't20', name: 'L\'Éternel de Lumino', description: 'Atteindre le niveau 100.', rarity: 'legendary', condition: (s) => s.level >= 100 },
-
-  // --- HABITUDES ---
-  { id: 't21', name: 'Apprenti Artisan', description: '5 habitudes complétées.', rarity: 'common', condition: (s) => s.totalHabitsCompleted >= 5 },
-  { id: 't22', name: 'Compagnon Fidèle', description: '10 habitudes complétées.', rarity: 'common', condition: (s) => s.totalHabitsCompleted >= 10 },
-  { id: 't23', name: 'Ouvrier du Destin', description: '20 habitudes complétées.', rarity: 'common', condition: (s) => s.totalHabitsCompleted >= 20 },
-  { id: 't24', name: 'Forgeron de Routine', description: '30 habitudes complétées.', rarity: 'rare', condition: (s) => s.totalHabitsCompleted >= 30 },
-  { id: 't25', name: 'Sculpteur de Vie', description: '40 habitudes complétées.', rarity: 'rare', condition: (s) => s.totalHabitsCompleted >= 40 },
-  { id: 't26', name: 'Tisseur de Temps', description: '50 habitudes complétées.', rarity: 'rare', condition: (s) => s.totalHabitsCompleted >= 50 },
-  { id: 't29', name: 'Le Méthodique', description: '80 habitudes complétées.', rarity: 'epic', condition: (s) => s.totalHabitsCompleted >= 80 },
-  { id: 't30', name: 'Architecte d\'Habitudes', description: '100 habitudes complétées.', rarity: 'epic', condition: (s) => s.totalHabitsCompleted >= 100 },
-  { id: 't35', name: 'Maître d\'Oeuvre', description: '300 habitudes complétées.', rarity: 'legendary', condition: (s) => s.totalHabitsCompleted >= 300 },
-  { id: 't40', name: 'Le Démiurge', description: '2000 habitudes complétées.', rarity: 'legendary', condition: (s) => s.totalHabitsCompleted >= 2000 },
-  
-  // --- SERIES ---
-  { id: 't41', name: 'Série de Bronze', description: '3 jours de suite.', rarity: 'common', condition: (s) => s.streak >= 3 },
-  { id: 't46', name: 'Âme de Feu', description: '7 jours de suite.', rarity: 'rare', condition: (s) => s.streak >= 7 },
-  { id: 't51', name: 'Maître du Mois', description: '30 jours de suite.', rarity: 'epic', condition: (s) => s.streak >= 30 },
-  { id: 't60', name: 'Année de Lumière', description: '365 jours de suite.', rarity: 'legendary', condition: (s) => s.streak >= 365 },
+export const DAILY_QUOTES = [
+  "Le courage commence par un simple geste.",
+  "Chaque habitude est une brique de votre citadelle.",
+  "La discipline est le pont entre les rêves et la réalité.",
+  "Le calme est l'arme suprême du guerrier.",
+  "Un foyer ordonné est un sanctuaire impénétrable.",
+  "Maîtrisez votre or, maîtrisez votre destin.",
+  "L'esprit est un temple qui se construit chaque jour.",
+  "L'amour est la magie la plus ancienne et la plus puissante."
 ];
 
-export const QUEST_LIBRARY: Omit<Challenge, 'id' | 'currentDay' | 'lastCompletedDate'>[] = [
-  // --- SPORT & SANTÉ ---
-  { title: "Yoga de l'Aube", description: "15 min de salutation au soleil.", duration: 7, icon: "🧘", color: "bg-teal-500" },
-  { title: "Escalier Héroïque", description: "Oubliez l'ascenseur toute la journée.", duration: 5, icon: "🪜", color: "bg-orange-500" },
-  { title: "Planche d'Acier", description: "Maintenir 1 min de gainage.", duration: 10, icon: "💪", color: "bg-slate-600" },
-  { title: "Hydratation Vitale", description: "2L d'eau par jour sans faute.", duration: 30, icon: "💧", color: "bg-blue-400" },
-  { title: "Marche Astrale", description: "10 000 pas quotidiens.", duration: 14, icon: "🚶", color: "bg-lime-500" },
-  { title: "Course du Vent", description: "20 min de jogging léger.", duration: 7, icon: "🏃", color: "bg-red-400" },
-  { title: "Étirements Zen", description: "Séance de stretching avant dodo.", duration: 5, icon: "🤸", color: "bg-purple-400" },
-  { title: "Douche Glacée", description: "30s d'eau froide à la fin.", duration: 7, icon: "❄️", color: "bg-cyan-400" },
-  { title: "Cœur de Lion", description: "15 min de cardio intensif.", duration: 10, icon: "❤️", color: "bg-rose-500" },
-  { title: "Mobilité Matinale", description: "Réveil articulaire complet.", duration: 7, icon: "🦴", color: "bg-amber-400" },
+const generateTitles = (): HeroicTitle[] => {
+  const titles: HeroicTitle[] = [];
+  const baseNames = [
+    "Vagabond", "Sentinelle", "Apprenti", "Guerrier", "Mage", "Assassin", "Paladin", "Alchimiste", 
+    "Chasseur", "Seigneur", "Invocateur", "Moine", "Barde", "Prêtre", "Ombre", "Chevalier", 
+    "Archiviste", "Titan", "Rôdeur", "Éclaireur", "Gardien", "Druide", "Nécromancien", "Héraut",
+    "Oracle", "Vigile", "Berserker", "Lame", "Esprit", "Nomade", "Pèlerin", "Sage", "Maître"
+  ];
+  const descriptors = [
+    "des Brumes", "de l'Aube", "du Zénith", "du Crépuscule", "du Silence", "de Cristal", 
+    "de l'Éther", "des Arcanes", "du Néant", "de Jade", "d'Argent", "de l'Éternité", 
+    "de Mercure", "du Destin", "d'Émeraude", "du Savoir", "de Wyvernes", "de la Nuit", 
+    "des Cieux", "de la Terre", "du Sang", "de l'Or", "des Tempêtes", "des Esprits", 
+    "de la Faille", "du Chaos", "du Givre", "du Soleil Noir", "des Abysses", "de Flammes",
+    "du Vent d'Est", "des Anciens", "de la Forêt Blanche", "des Sables Rouges"
+  ];
 
-  // --- LECTURE & CULTURE ---
-  { title: "Bibliophile Matinal", description: "Lire 10 pages au petit déjeuner.", duration: 14, icon: "📖", color: "bg-indigo-600" },
-  { title: "Poésie du Soir", description: "Lire un poème avant de dormir.", duration: 5, icon: "📜", color: "bg-pink-400" },
-  { title: "Savoir Antique", description: "Lire un chapitre d'un livre d'histoire.", duration: 10, icon: "🏛️", color: "bg-amber-700" },
-  { title: "Critique Littéraire", description: "Noter un résumé de sa lecture.", duration: 7, icon: "✍️", color: "bg-slate-400" },
-  { title: "Odyssée de Fiction", description: "Lire 30 min d'un roman imaginaire.", duration: 21, icon: "🧚", color: "bg-violet-600" },
-  { title: "Curiosité Scientifique", description: "Lire un article de science.", duration: 5, icon: "🔬", color: "bg-blue-600" },
-  { title: "Art & Lumière", description: "Visiter une galerie ou musée en ligne.", duration: 3, icon: "🎨", color: "bg-yellow-600" },
-  { title: "Sagesse Philosophique", description: "Lire une citation et méditer dessus.", duration: 7, icon: "🦉", color: "bg-emerald-700" },
+  let idCounter = 1;
+  const usedNames = new Set<string>();
+  while (titles.length < 200) {
+    const base = baseNames[idCounter % baseNames.length];
+    const desc = descriptors[Math.floor(idCounter / baseNames.length) % descriptors.length];
+    const name = `${base} ${desc}`;
+    if (!usedNames.has(name)) {
+      usedNames.add(name);
+      const rarityIndex = Math.floor(idCounter / 50);
+      const rarity: Rarity = rarityIndex === 0 ? 'common' : rarityIndex === 1 ? 'rare' : rarityIndex === 2 ? 'epic' : 'legendary';
+      const type = idCounter % 4; 
+      let condition: (s: any) => boolean;
+      let reqText = "";
+      if (type === 0) {
+        const lv = Math.min(100, Math.floor(idCounter / 2) + 1);
+        condition = (s) => s.level >= lv;
+        reqText = `Atteindre le Niveau ${lv}`;
+      } else if (type === 1) {
+        const strk = Math.min(100, Math.floor(idCounter / 4) + 2);
+        condition = (s) => s.streak >= strk;
+        reqText = `Série de ${strk} jours`;
+      } else if (type === 2) {
+        const hab = idCounter * 5;
+        condition = (s) => s.totalHabitsCompleted >= hab;
+        reqText = `${hab} Habitudes complétées`;
+      } else {
+        const foc = idCounter * 15;
+        condition = (s) => s.totalFocusMinutes >= foc;
+        reqText = `${foc} min de Focus total`;
+      }
+      titles.push({ id: `title-${idCounter}`, name: name, description: `Forger votre légende.`, requirementText: reqText, rarity: rarity, condition: condition });
+    }
+    idCounter++;
+  }
+  return titles;
+};
 
-  // --- VOYAGE & EXPLORATION ---
-  { title: "Explorateur Local", description: "Visiter un nouveau quartier à pied.", duration: 1, icon: "🗺️", color: "bg-green-600" },
-  { title: "Sentier Inconnu", description: "Faire une randonnée en forêt.", duration: 1, icon: "🌲", color: "bg-emerald-600" },
-  { title: "Parc de Sérénité", description: "Passer 30 min dans un parc sans tel.", duration: 5, icon: "🍃", color: "bg-teal-400" },
-  { title: "Horizon Lointain", description: "Planifier son futur voyage idéal.", duration: 3, icon: "✈️", color: "bg-sky-500" },
-  { title: "Pique-Nique Royal", description: "Manger dehors au soleil.", duration: 3, icon: "🧺", color: "bg-orange-300" },
-  { title: "Photographe d'Instant", description: "Prendre 5 photos de la ville.", duration: 5, icon: "📷", color: "bg-slate-800" },
-  { title: "Marché Couleurs", description: "Acheter des produits au marché.", duration: 3, icon: "🍎", color: "bg-red-500" },
+export const HEROIC_TITLES = generateTitles();
 
-  // --- APPRENTISSAGE ---
-  { title: "Polyglotte Junior", description: "Apprendre 5 mots d'une langue.", duration: 30, icon: "🌍", color: "bg-indigo-400" },
-  { title: "Code de Lumière", description: "Écrire une fonction simple.", duration: 14, icon: "💻", color: "bg-slate-700" },
-  { title: "Chef Étoilé", description: "Cuisiner une nouvelle recette saine.", duration: 5, icon: "🍳", color: "bg-orange-400" },
-  { title: "Mélodie Douce", description: "Pratiquer un instrument 15 min.", duration: 10, icon: "🎸", color: "bg-rose-400" },
-  { title: "Origami Zen", description: "Plier une forme en papier par jour.", duration: 7, icon: "🦢", color: "bg-pink-300" },
-  { title: "Échecs du Roi", description: "Jouer ou étudier une partie.", duration: 10, icon: "♟️", color: "bg-slate-900" },
-  { title: "Podcast du Savoir", description: "Écouter 20 min de contenu éducatif.", duration: 7, icon: "🎧", color: "bg-purple-500" },
+const generateQuestLibrary = (): Omit<Challenge, 'id' | 'currentDay' | 'lastCompletedDate'>[] => {
+  const questThemes = [
+    { t: "L'Épreuve d'Or", d: "Dominez vos finances pour sécuriser votre avenir.", i: "💰", c: "bg-emerald-600", topic: "Finance" },
+    { t: "La Voie de la Renaissance", d: "Purifiez votre corps et votre esprit quotidiennement.", i: "🧘", c: "bg-indigo-600", topic: "Wellness" },
+    { t: "L'Éveil de l'Esprit", d: "Dépassez vos limites intellectuelles et personnelles.", i: "🧠", c: "bg-amber-600", topic: "Self Improvement" },
+    { t: "L'Ordre du Sanctuaire", d: "Maintenez l'équilibre parfait dans votre environnement.", i: "🧹", c: "bg-slate-600", topic: "Organization" },
+    { t: "Le Labeur du Maître", d: "Excellez dans votre art et votre carrière professionnelle.", i: "⚙️", c: "bg-blue-600", topic: "Working" },
+    { t: "Le Savoir des Anciens", d: "Découvrez les secrets cachés dans les livres et les études.", i: "📜", c: "bg-cyan-600", topic: "Studying" },
+    { t: "La Symphonie Divine", d: "Exprimez votre âme à travers la musique et les sons.", i: "🪕", c: "bg-rose-500", topic: "Music" },
+    { t: "L'Appel du Sauvage", d: "Reconnectez-vous avec les forces de la nature.", i: "🌲", c: "bg-green-600", topic: "Outdoor" },
+    { t: "L'Odyssée lointaine", d: "Explorez de nouveaux horizons et cultures.", i: "🧳", c: "bg-orange-500", topic: "Travelling" },
+    { t: "Le Cercle de l'Amitié", d: "Fortifiez vos liens avec les autres aventuriers.", i: "🍽️", c: "bg-purple-600", topic: "Social" }
+  ];
 
-  // --- TRAVAIL & PRODUCTIVITÉ ---
-  { title: "Inbox Zéro", description: "Vider sa boîte mail avant 18h.", duration: 5, icon: "📩", color: "bg-blue-400" },
-  { title: "Focus Profond", description: "2h de travail sans distraction.", duration: 10, icon: "🎯", color: "bg-indigo-500" },
-  { title: "Bureau de Crystal", description: "Ranger son espace de travail.", duration: 3, icon: "🧹", color: "bg-slate-200" },
-  { title: "Planificateur Expert", description: "Lister ses 3 priorités du lendemain.", duration: 14, icon: "📝", color: "bg-emerald-500" },
-  { title: "Zéro Procrastination", description: "Faire la tâche la plus dure en 1er.", duration: 7, icon: "🚀", color: "bg-orange-600" },
-  { title: "Pauses Actives", description: "S'étirer toutes les heures de travail.", duration: 5, icon: "🔄", color: "bg-blue-300" },
+  const suffixes = [
+    "Éternelle", "du Destin", "de la Faille", "du Crépuscule", "du Zénith", "du Renouveau", "de l'Abîme", "de la Victoire", "du Sage", "de l'Aube",
+    "des Anciens", "de Lumino", "du Grand Voyageur", "des Arcanes", "du Maître des Lames", "de la Paix Intérieure", "de la Prospérité", "des Vents", "des Marées", "du Feu Sacré"
+  ];
 
-  // --- FAMILLE & SOCIAL ---
-  { title: "Cœur Ouvert", description: "Appeler un proche pour prendre des news.", duration: 7, icon: "📞", color: "bg-green-400" },
-  { title: "Dîner de Lumière", description: "Manger en famille sans écrans.", duration: 10, icon: "🍽️", color: "bg-amber-500" },
-  { title: "Compliment Gratuit", description: "Faire un vrai compliment à quelqu'un.", duration: 5, icon: "🗣️", color: "bg-yellow-400" },
-  { title: "Écoute Active", description: "Écouter 10 min sans interrompre.", duration: 3, icon: "👂", color: "bg-blue-200" },
-  { title: "Gratitude Partagée", description: "Dire merci sincèrement à 3 personnes.", duration: 7, icon: "🙏", color: "bg-rose-300" },
-  { title: "Aide Familiale", description: "Prendre en charge une corvée surprise.", duration: 5, icon: "🏠", color: "bg-indigo-300" },
+  const quests: Omit<Challenge, 'id' | 'currentDay' | 'lastCompletedDate'>[] = [];
+  for (let i = 0; i < 1000; i++) {
+    const theme = questThemes[i % questThemes.length];
+    const suffix = suffixes[Math.floor(i / questThemes.length) % suffixes.length];
+    const duration = 21 + (Math.floor(i / 100) * 7); // De 21 à 90 jours environ
+    
+    quests.push({
+      title: `${theme.t} ${suffix}`,
+      description: `[Thématique: ${theme.topic}] ${theme.d} Maintenez la discipline pendant ${duration} jours.`,
+      duration: duration,
+      icon: theme.i,
+      color: theme.c
+    });
+  }
+  return quests;
+};
 
-  // --- ALTRUISME & AIDE ---
-  { title: "Geste de Bonté", description: "Aider un inconnu dans la rue.", duration: 3, icon: "🤝", color: "bg-emerald-400" },
-  { title: "Don de Soi", description: "Faire un don (vêtements, temps, argent).", duration: 1, icon: "🎁", color: "bg-rose-500" },
-  { title: "Éco-Guerrier", description: "Ramasser 5 déchets en marchant.", duration: 7, icon: "♻️", color: "bg-green-700" },
-  { title: "Soutien Local", description: "Acheter chez un petit artisan.", duration: 3, icon: "🏪", color: "bg-orange-700" },
-  { title: "Poste de Bienveillance", description: "Envoyer un mot d'encouragement.", duration: 5, icon: "💌", color: "bg-pink-400" },
-  
-  // --- VIE QUOTIDIENNE ---
-  { title: "Coucher Solaire", description: "Éteindre les écrans à 21h30.", duration: 21, icon: "🌙", color: "bg-indigo-900" },
-  { title: "Réveil de Paix", description: "Pas de téléphone durant la 1ère heure.", duration: 14, icon: "📵", color: "bg-slate-800" },
-  { title: "Zéro Sucre", description: "Pas de sucre transformé aujourd'hui.", duration: 7, icon: "🚫", color: "bg-red-600" },
-  { title: "Méditation Express", description: "5 min de silence total.", duration: 30, icon: "🧘‍♂️", color: "bg-teal-300" },
-  { title: "Posture Royale", description: "Se tenir droit devant son ordi.", duration: 10, icon: "🧍", color: "bg-emerald-600" },
-  { title: "Journal Intime", description: "Écrire ses pensées du jour.", duration: 7, icon: "📓", color: "bg-slate-500" }
+export const QUEST_LIBRARY = generateQuestLibrary();
+
+export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }[] = [
+  // FINANCE
+  { name: "Analyse du Trésor", icon: "💰", category: Category.MORNING },
+  { name: "Scellage des Dépenses", icon: "🛡️", category: Category.EVENING },
+  { name: "Offrande à l'Épargne", icon: "🏦", category: Category.MORNING },
+  { name: "Investissement des Sages", icon: "📈", category: Category.MORNING },
+  { name: "Revue des Revenus", icon: "💸", category: Category.EVENING },
+  { name: "Budget de l'Aventurier", icon: "📊", category: Category.AFTERNOON },
+  { name: "Chasse aux Soldes", icon: "🏷️", category: Category.AFTERNOON },
+  { name: "Purge des Abonnements", icon: "✂️", category: Category.EVENING },
+  { name: "Étude du Marché", icon: "🔍", category: Category.MORNING },
+  { name: "Don aux Nécessiteux", icon: "🎁", category: Category.EVENING },
+  { name: "Vente d'Objets Anciens", icon: "📦", category: Category.AFTERNOON },
+  { name: "Plan de Fortune 5 ans", icon: "🔮", category: Category.NIGHT },
+  { name: "Factures Honorées", icon: "🧾", category: Category.EVENING },
+  { name: "Réunion Fiscale", icon: "⚖️", category: Category.MORNING },
+  { name: "Crypto-Alchimie", icon: "🪙", category: Category.NIGHT },
+  { name: "Économie de Cristal", icon: "💎", category: Category.MORNING },
+  { name: "Négociation de Guilde", icon: "🤝", category: Category.AFTERNOON },
+  { name: "Lecture de l'Or", icon: "📙", category: Category.EVENING },
+  { name: "Protection du Butin", icon: "🔒", category: Category.NIGHT },
+  { name: "Audit de l'Héritage", icon: "📜", category: Category.AFTERNOON },
+
+  // WELLNESS
+  { name: "Rituel de Méditation", icon: "🧘", category: Category.MORNING },
+  { name: "Bain de Renaissance", icon: "🛀", category: Category.NIGHT },
+  { name: "Hydratation de Vie", icon: "💧", category: Category.MORNING },
+  { name: "Yoga du Lotus", icon: "💮", category: Category.MORNING },
+  { name: "Massage des Guerriers", icon: "💆", category: Category.EVENING },
+  { name: "Sommeil des Titans", icon: "💤", category: Category.NIGHT },
+  { name: "Respiration de l'Éther", icon: "🌬️", category: Category.AFTERNOON },
+  { name: "Détente au Sauna", icon: "🧖", category: Category.EVENING },
+  { name: "Soin de l'Armure (Peau)", icon: "🧴", category: Category.MORNING },
+  { name: "Silence de l'Ermite", icon: "🤐", category: Category.NIGHT },
+  { name: "Thé des Sages", icon: "🍵", category: Category.EVENING },
+  { name: "Étirements Divins", icon: "🙆", category: Category.MORNING },
+  { name: "Guérison Naturelle", icon: "🌿", category: Category.AFTERNOON },
+  { name: "Lumière du Soleil", icon: "☀️", category: Category.MORNING },
+  { name: "Journal de Gratitude", icon: "🙏", category: Category.EVENING },
+  { name: "Pause de l'Oracle", icon: "👁️", category: Category.AFTERNOON },
+  { name: "Harmonie Musicale", icon: "🎶", category: Category.NIGHT },
+  { name: "Affirmations de Pouvoir", icon: "🗣️", category: Category.MORNING },
+  { name: "Spa de l'Aube", icon: "✨", category: Category.MORNING },
+  { name: "Refuge Sensoriel", icon: "🕯️", category: Category.NIGHT },
+
+  // SELF IMPROVEMENT
+  { name: "Écriture de Légende", icon: "✍️", category: Category.MORNING },
+  { name: "Lecture de Grimoires", icon: "📖", category: Category.EVENING },
+  { name: "Apprentissage d'Arcanes", icon: "🧠", category: Category.MORNING },
+  { name: "Conférence des Maîtres", icon: "🎤", category: Category.AFTERNOON },
+  { name: "Défier sa Peur", icon: "🦁", category: Category.AFTERNOON },
+  { name: "Discipline de Fer", icon: "🛡️", category: Category.MORNING },
+  { name: "Revue de la Quête", icon: "📋", category: Category.EVENING },
+  { name: "Podcasts Erudits", icon: "🎧", category: Category.AFTERNOON },
+  { name: "Vision du Destin", icon: "🗺️", category: Category.MORNING },
+  { name: "Éliminer un Vice", icon: "🚫", category: Category.NIGHT },
+  { name: "Parler une Langue", icon: "🗣️", category: Category.MORNING },
+  { name: "Pratique du Code", icon: "💻", category: Category.AFTERNOON },
+  { name: "Public Speaking", icon: "📢", category: Category.AFTERNOON },
+  { name: "Gestion du Temps", icon: "⌛", category: Category.MORNING },
+  { name: "Pensée Critique", icon: "🤔", category: Category.EVENING },
+  { name: "Empathie du Héraut", icon: "❤️", category: Category.AFTERNOON }, 
+  { name: "Réseautage de Cour", icon: "🌐", category: Category.AFTERNOON },
+  { name: "Modestie du Sage", icon: "🌾", category: Category.NIGHT },
+  { name: "Confiance de Titan", icon: "⚡", category: Category.MORNING },
+  { name: "Leadership de Roi", icon: "👑", category: Category.AFTERNOON },
+
+  // ORGANIZATION
+  { name: "Nettoyage du Sanctuaire", icon: "🧹", category: Category.AFTERNOON },
+  { name: "Tri des Reliques", icon: "📂", category: Category.EVENING },
+  { name: "Planification d'Assaut", icon: "📅", category: Category.MORNING },
+  { name: "Désencombrement", icon: "🗑️", category: Category.AFTERNOON },
+  { name: "Lessive des Armes", icon: "🧺", category: Category.AFTERNOON },
+  { name: "Inbox Zero", icon: "📧", category: Category.EVENING },
+  { name: "Réglage d'Horloge", icon: "⏰", category: Category.MORNING },
+  { name: "Inventaire Sac à Dos", icon: "🎒", category: Category.EVENING },
+  { name: "Préparation de Repas", icon: "🍱", category: Category.EVENING },
+  { name: "Courses de la Ville", icon: "🛒", category: Category.AFTERNOON },
+  { name: "Papiers en Ordre", icon: "📁", category: Category.AFTERNOON },
+  { name: "Nettoyage Digital", icon: "💾", category: Category.NIGHT },
+  { name: "Rangement du Garage", icon: "🔨", category: Category.AFTERNOON },
+  { name: "Lustrage des Vitres", icon: "🪟", category: Category.AFTERNOON },
+  { name: "Maintenance Maison", icon: "🏠", category: Category.AFTERNOON },
+  { name: "Gestion des Clefs", icon: "🔑", category: Category.EVENING },
+  { name: "Archive de Vie", icon: "🗄️", category: Category.NIGHT },
+  { name: "Décoration Sanctuaire", icon: "🖼️", category: Category.AFTERNOON },
+  { name: "Fleurs de l'Autel", icon: "💐", category: Category.MORNING },
+  { name: "Arrosage du Domaine", icon: "🚿", category: Category.MORNING },
+
+  // WORKING
+  { name: "Labeur Concentré", icon: "⚙️", category: Category.MORNING },
+  { name: "Conseil de Guerre", icon: "👥", category: Category.AFTERNOON },
+  { name: "Rédaction de Rapports", icon: "📄", category: Category.AFTERNOON },
+  { name: "Prospection Terres", icon: "📞", category: Category.MORNING },
+  { name: "Vente de Sorts", icon: "💼", category: Category.AFTERNOON },
+  { name: "Code Arcanique", icon: "💻", category: Category.MORNING },
+  { name: "Design de Glyphes", icon: "🎨", category: Category.AFTERNOON },
+  { name: "Pause du Travailleur", icon: "☕", category: Category.AFTERNOON },
+  { name: "Analyse de Données", icon: "📉", category: Category.MORNING },
+  { name: "Gestion de Projet", icon: "🏗️", category: Category.AFTERNOON },
+  { name: "Révision de Contrats", icon: "✍️", category: Category.MORNING },
+  { name: "Formation de Recrues", icon: "🎓", category: Category.AFTERNOON },
+  { name: "Networking Guilde", icon: "🤝", category: Category.AFTERNOON },
+  { name: "Évènement de Guilde", icon: "🎪", category: Category.EVENING },
+  { name: "Revue des Erreurs", icon: "⚠️", category: Category.EVENING },
+  { name: "Tests de Robustesse", icon: "🧪", category: Category.AFTERNOON },
+  { name: "Optimisation Flux", icon: "🔄", category: Category.MORNING },
+  { name: "Vision Stratégique", icon: "🔭", category: Category.MORNING },
+  { name: "Bilan Hebdomadaire", icon: "🏁", category: Category.EVENING },
+  { name: "Clôture du Chantier", icon: "🚧", category: Category.EVENING },
+
+  // STUDYING
+  { name: "Savoir des Anciens", icon: "📜", category: Category.MORNING },
+  { name: "Flashcards Magiques", icon: "🃏", category: Category.AFTERNOON },
+  { name: "Lecture de Thèses", icon: "📓", category: Category.EVENING },
+  { name: "Laboratoire d'Alchimie", icon: "⚗️", category: Category.AFTERNOON },
+  { name: "Cours de l'Académie", icon: "🏫", category: Category.MORNING },
+  { name: "Examen de Passage", icon: "📝", category: Category.AFTERNOON },
+  { name: "Théorie des Cordes", icon: "🧶", category: Category.NIGHT },
+  { name: "Apprentissage IA", icon: "🤖", category: Category.MORNING },
+  { name: "Histoire de Lumino", icon: "🏺", category: Category.EVENING },
+  { name: "Géographie du Monde", icon: "🗺️", category: Category.AFTERNOON },
+  { name: "Astronomie Céleste", icon: "🔭", category: Category.NIGHT },
+  { name: "Biologie des Créatures", icon: "🧬", category: Category.MORNING },
+  { name: "Droit des Royaumes", icon: "⚖️", category: Category.AFTERNOON },
+  { name: "Philosophie Antique", icon: "🏛️", category: Category.EVENING },
+  { name: "Mathématiques Sacrées", icon: "🔢", category: Category.MORNING },
+  { name: "Psychologie de l'Âme", icon: "🧠", category: Category.EVENING },
+  { name: "Anatomie de Titan", icon: "🦴", category: Category.AFTERNOON },
+  { name: "Botanique Magique", icon: "🍃", category: Category.MORNING },
+  { name: "Apprendre à Apprendre", icon: "💡", category: Category.NIGHT },
+  { name: "Débat d'idées", icon: "💬", category: Category.AFTERNOON },
+
+  // MUSIC
+  { name: "Pratique de la Luth", icon: "🪕", category: Category.EVENING },
+  { name: "Composition de Chant", icon: "🎼", category: Category.EVENING },
+  { name: "Solfège des Sphères", icon: "🎵", category: Category.MORNING },
+  { name: "Accordage des Cordes", icon: "🎻", category: Category.MORNING },
+  { name: "Improvisation Jazz", icon: "🎷", category: Category.AFTERNOON },
+  { name: "Chants de Bataille", icon: "🥁", category: Category.AFTERNOON },
+  { name: "Piano des Nuages", icon: "🎹", category: Category.EVENING },
+  { name: "Guitare de Feu", icon: "🎸", category: Category.EVENING },
+  { name: "Chant Grégorien", icon: "🎤", category: Category.MORNING },
+  { name: "Écoute de l'Harmonie", icon: "🎶", category: Category.NIGHT },
+  { name: "Théorie Musicale", icon: "📖", category: Category.MORNING },
+  { name: "Mixage d'Essence", icon: "🎚️", category: Category.NIGHT },
+  { name: "Découverte de Barde", icon: "📻", category: Category.AFTERNOON },
+  { name: "Concert de Guilde", icon: "🎟️", category: Category.EVENING },
+  { name: "Flûte Enchantée", icon: "🪈", category: Category.AFTERNOON },
+  { name: "Écrire une Partition", icon: "🖋️", category: Category.NIGHT },
+  { name: "Rythme de Tambour", icon: "🪘", category: Category.MORNING },
+  { name: "Mémoriser Paroles", icon: "🧠", category: Category.EVENING },
+  { name: "Nettoyer Instrument", icon: "🧽", category: Category.AFTERNOON },
+  { name: "Performance Solo", icon: "🌟", category: Category.NIGHT },
+
+  // OUTDOOR
+  { name: "Marche en Forêt", icon: "🌲", category: Category.AFTERNOON },
+  { name: "Vélo des Plaines", icon: "🚲", category: Category.MORNING },
+  { name: "Jardinage Zen", icon: "🌻", category: Category.MORNING },
+  { name: "Randonnée des Cimes", icon: "🥾", category: Category.AFTERNOON },
+  { name: "Course des Lièvres", icon: "🏃", category: Category.MORNING },
+  { name: "Camping de l'Aube", icon: "⛺", category: Category.MORNING },
+  { name: "Escalade du Titan", icon: "🧗", category: Category.AFTERNOON },
+  { name: "Nage de la Sirène", icon: "🏊", category: Category.AFTERNOON },
+  { name: "Observation d'Oiseaux", icon: "🔭", category: Category.MORNING },
+  { name: "Photographie Nature", icon: "📸", category: Category.AFTERNOON },
+  { name: "Pique-nique de Roi", icon: "🧺", category: Category.AFTERNOON },
+  { name: "Kayak des Rivières", icon: "🛶", category: Category.AFTERNOON },
+  { name: "Surf des Tempêtes", icon: "🏄", category: Category.AFTERNOON },
+  { name: "Feu de Joie", icon: "🔥", category: Category.EVENING },
+  { name: "Pêche au Calme", icon: "🎣", category: Category.MORNING },
+  { name: "Ramassage Déchets", icon: "🚮", category: Category.AFTERNOON },
+  { name: "Star Gazing", icon: "🌌", category: Category.NIGHT },
+  { name: "Balade au Clair Lune", icon: "🌙", category: Category.NIGHT },
+  { name: "Course à Pied", icon: "👟", category: Category.MORNING },
+  { name: "Parkour Urbain", icon: "🏙️", category: Category.AFTERNOON },
+
+  // TRAVELLING
+  { name: "Préparer le Bagage", icon: "🧳", category: Category.EVENING },
+  { name: "Planifier l'Odyssée", icon: "🗺️", category: Category.MORNING },
+  { name: "Check Billets Volants", icon: "🎟️", category: Category.AFTERNOON },
+  { name: "Langue Locale", icon: "🗣️", category: Category.MORNING },
+  { name: "Culture des Terres", icon: "🏮", category: Category.EVENING },
+  { name: "Change de Monnaie", icon: "💱", category: Category.AFTERNOON },
+  { name: "Passeport du Monde", icon: "🛂", category: Category.MORNING },
+  { name: "Check Assurance Voyage", icon: "🛡️", category: Category.AFTERNOON },
+  { name: "Réserver l'Auberge", icon: "🏨", category: Category.EVENING },
+  { name: "Cartographie GPS", icon: "📍", category: Category.MORNING },
+  { name: "Dégustation Étrangère", icon: "🍜", category: Category.AFTERNOON },
+  { name: "Journal de Voyage", icon: "📓", category: Category.NIGHT },
+  { name: "Souvenirs de Quête", icon: "🏺", category: Category.EVENING },
+  { name: "Transport local", icon: "🚆", category: Category.AFTERNOON },
+  { name: "Rencontre Nomades", icon: "👋", category: Category.AFTERNOON },
+  { name: "Explore Vieille Ville", icon: "🏛️", category: Category.AFTERNOON },
+  { name: "Check-in Vol", icon: "✈️", category: Category.MORNING },
+  { name: "Vidéos de l'Aventure", icon: "🎥", category: Category.NIGHT },
+  { name: "Cartes Postales", icon: "✉️", category: Category.EVENING },
+  { name: "Itinéraire Sac à Dos", icon: "🗺️", category: Category.NIGHT },
+
+  // SOCIAL & OTHERS
+  { name: "Dîner de Guilde", icon: "🍽️", category: Category.EVENING },
+  { name: "Appel aux Proches", icon: "📞", category: Category.EVENING },
+  { name: "Jeux de Société", icon: "🎲", category: Category.EVENING },
+  { name: "Visite au Temple", icon: "⛩️", category: Category.MORNING },
+  { name: "Bénévolat de Ville", icon: "🤝", category: Category.AFTERNOON },
+  { name: "Célébration d'Anniv", icon: "🎂", category: Category.EVENING },
+  { name: "Cinéma des Songes", icon: "🍿", category: Category.NIGHT },
+  { name: "Musée des Anciens", icon: "🖼️", category: Category.AFTERNOON },
+  { name: "Théâtre Royal", icon: "🎭", category: Category.EVENING },
+  { name: "Danse de Salon", icon: "💃", category: Category.NIGHT },
+  { name: "Soins aux Animaux", icon: "🐈", category: Category.MORNING },
+  { name: "Dressage du Loup", icon: "🐕", category: Category.AFTERNOON },
+  { name: "Check des Emails", icon: "📧", category: Category.MORNING },
+  { name: "Maintenance PC", icon: "🔧", category: Category.NIGHT },
+  { name: "Backup Données", icon: "☁️", category: Category.NIGHT },
+  { name: "Cuisine Royale", icon: "👨‍🍳", category: Category.EVENING },
+  { name: "Bricolage d'Objets", icon: "🔨", category: Category.AFTERNOON },
+  { name: "Prière ou Gratitude", icon: "🙏", category: Category.NIGHT },
+  { name: "Écoute de l'Inconnu", icon: "👂", category: Category.AFTERNOON },
+  { name: "Partage de Savoir", icon: "📢", category: Category.AFTERNOON }
 ];
 
 export const DEFAULT_HABITS: Habit[] = [
-  { id: '1', name: 'Méditation 5 min', category: Category.MORNING, completed: false, time: '07:00', dueDate: null, icon: '🧘' },
-  { id: '2', name: 'Hydratation', category: Category.MORNING, completed: false, time: '07:15', dueDate: null, icon: '💧' },
+  { id: '1', name: "L'Appel de l'Eau", category: Category.MORNING, completed: false, time: '07:30', dueDate: null, icon: '💧' },
+  { id: '2', name: "Dressage du Nid", category: Category.MORNING, completed: false, time: '07:45', dueDate: null, icon: '🛏️' },
 ];
 
 export const DEFAULT_CHALLENGES: Challenge[] = [
-  { 
-    id: 'c1', 
-    title: '7 Jours de Zen', 
-    description: 'Méditer chaque matin pendant une semaine complète.', 
-    duration: 7, 
-    currentDay: 0, 
-    icon: '🧘‍♂️', 
-    color: 'bg-emerald-500' 
-  }
+  { id: 'c1', title: 'Le Chemin de la Fortune', description: 'Dominez vos finances pour libérer votre esprit.', duration: 21, currentDay: 0, icon: '💰', color: 'bg-emerald-600' }
 ];
 
 export const CATEGORY_LABELS: Record<Category, string> = {

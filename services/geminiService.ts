@@ -1,7 +1,7 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
+import { DAILY_QUOTES } from "../constants";
 
-// Initialize the GoogleGenAI client with the API key from environment variables.
 const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const getDailyWellnessTip = async (): Promise<string> => {
@@ -9,47 +9,14 @@ export const getDailyWellnessTip = async (): Promise<string> => {
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: "Donne-moi un conseil bien-être court (maximum 2 phrases) pour bien commencer ma journée en français.",
+      contents: "Donne-moi un conseil de vie ultra-court et puissant (max 7 mots) en français. Thème aléatoire : discipline, calme, argent, famille ou sport.",
       config: {
-        systemInstruction: "Tu es un coach bien-être expert. Sois motivant et concis.",
+        systemInstruction: "Tu es une voix de sagesse minimaliste. Pas de ponctuation excessive. Direct et inspirant.",
       }
     });
-    // The .text property is a getter, do not call it as a function.
-    return response.text || "Prenez une grande inspiration et souriez à la journée qui commence.";
+    return response.text?.replace(/[".]/g, '') || DAILY_QUOTES[Math.floor(Math.random() * DAILY_QUOTES.length)];
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "L'équilibre est la clé d'une vie sereine.";
-  }
-};
-
-export const suggestRoutine = async (goal: string): Promise<any[]> => {
-  const ai = getAI();
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Suggère une routine de 3 activités pour atteindre cet objectif : "${goal}". Réponds en français au format JSON.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              time: { type: Type.STRING },
-              activity: { type: Type.STRING },
-              benefit: { type: Type.STRING },
-              icon: { type: Type.STRING, description: "Un seul emoji représentatif" }
-            },
-            required: ["time", "activity", "benefit", "icon"]
-          }
-        }
-      }
-    });
-    // The .text property is a getter, do not call it as a function.
-    const jsonStr = (response.text || "[]").trim();
-    return JSON.parse(jsonStr);
-  } catch (error) {
-    console.error("Gemini Suggestion Error:", error);
-    return [];
+    return DAILY_QUOTES[Math.floor(Math.random() * DAILY_QUOTES.length)];
   }
 };

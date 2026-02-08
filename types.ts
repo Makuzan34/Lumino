@@ -36,19 +36,13 @@ export interface Notification {
   read: boolean;
 }
 
-export interface AIRoutineSuggestion {
-  time: string;
-  activity: string;
-  benefit: string;
-  icon: string;
-}
-
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
 export interface HeroicTitle {
   id: string;
   name: string;
   description: string;
+  requirementText: string; // Nouvelle propriété
   rarity: Rarity;
   condition: (stats: UserStats) => boolean;
 }
