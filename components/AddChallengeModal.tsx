@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Challenge } from '../types';
-import { QUEST_LIBRARY } from '../constants';
+import { Challenge, Difficulty } from '../types';
+import { QUEST_LIBRARY, DIFFICULTY_LABELS } from '../constants';
 
 interface AddChallengeModalProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ const AddChallengeModal: React.FC<AddChallengeModalProps> = ({ isOpen, onClose, 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState(21);
+  const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.MEDIUM);
   const [icon, setIcon] = useState('🏆');
   const [color, setColor] = useState('bg-indigo-600');
   const [showLibrary, setShowLibrary] = useState(false);
@@ -24,12 +25,14 @@ const AddChallengeModal: React.FC<AddChallengeModalProps> = ({ isOpen, onClose, 
       setTitle(editingChallenge.title);
       setDescription(editingChallenge.description);
       setDuration(editingChallenge.duration);
+      setDifficulty(editingChallenge.difficulty || Difficulty.MEDIUM);
       setIcon(editingChallenge.icon);
       setColor(editingChallenge.color);
     } else {
       setTitle('');
       setDescription('');
       setDuration(21);
+      setDifficulty(Difficulty.MEDIUM);
       setIcon('🏆');
       setColor('bg-indigo-600');
     }
@@ -45,6 +48,7 @@ const AddChallengeModal: React.FC<AddChallengeModalProps> = ({ isOpen, onClose, 
       title,
       description,
       duration,
+      difficulty,
       icon,
       color,
     };
@@ -74,6 +78,13 @@ const AddChallengeModal: React.FC<AddChallengeModalProps> = ({ isOpen, onClose, 
     { name: 'Teal', class: 'bg-teal-500' },
   ];
 
+  const difficultyOptions = [
+    { value: Difficulty.EASY, color: 'hover:bg-emerald-50 peer-checked:bg-emerald-600 peer-checked:text-white border-emerald-200' },
+    { value: Difficulty.MEDIUM, color: 'hover:bg-indigo-50 peer-checked:bg-indigo-600 peer-checked:text-white border-indigo-200' },
+    { value: Difficulty.HARD, color: 'hover:bg-amber-50 peer-checked:bg-amber-600 peer-checked:text-white border-amber-200' },
+    { value: Difficulty.HEROIC, color: 'hover:bg-rose-50 peer-checked:bg-rose-600 peer-checked:text-white border-rose-200' },
+  ];
+
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-md rounded-t-[3rem] sm:rounded-[3rem] shadow-2xl p-8 animate-in slide-in-from-bottom duration-300 overflow-y-auto max-h-[90vh]">
@@ -95,6 +106,23 @@ const AddChallengeModal: React.FC<AddChallengeModalProps> = ({ isOpen, onClose, 
               placeholder="Ex: 21 Jours de Calme"
               className="w-full p-5 bg-slate-50 rounded-3xl border border-slate-200 focus:border-indigo-500 outline-none transition-all shadow-inner"
             />
+
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Difficulté & XP Journalier</label>
+              <div className="flex gap-2">
+                {difficultyOptions.map((opt) => (
+                  <label key={opt.value} className="flex-1 cursor-pointer">
+                    <input 
+                      type="radio" name="difficulty-q" value={opt.value} checked={difficulty === opt.value} 
+                      onChange={() => setDifficulty(opt.value)} className="hidden peer" 
+                    />
+                    <div className={`text-center py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-tighter transition-all ${opt.color}`}>
+                      {DIFFICULTY_LABELS[opt.value]}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
 
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Description</label>

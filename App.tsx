@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Habit, Category, Challenge, UserStats, Notification as AppNotification, HeroicTitle, Rarity } from './types';
+import { Habit, Category, Challenge, UserStats, Notification as AppNotification, HeroicTitle, Rarity, Difficulty } from './types';
 import { 
   DEFAULT_HABITS, 
   CATEGORY_LABELS, 
   DEFAULT_CHALLENGES, 
-  XP_PER_HABIT, 
-  XP_PER_CHALLENGE_DAY, 
+  HABIT_XP_VALUES,
+  CHALLENGE_XP_VALUES,
   XP_CHALLENGE_COMPLETE,
   MAX_LEVEL,
   GET_RANK,
@@ -18,6 +18,7 @@ import FocusTimer from './components/FocusTimer';
 import AddTaskModal from './components/AddTaskModal';
 import AddChallengeModal from './components/AddChallengeModal';
 import ChallengeCard from './components/ChallengeCard';
+import StreakCard from './components/StreakCard';
 import { getDailyWellnessTip } from './services/geminiService';
 
 const Wings: React.FC<{ rarity: Rarity, className?: string }> = ({ rarity, className }) => {
@@ -55,24 +56,17 @@ const Wings: React.FC<{ rarity: Rarity, className?: string }> = ({ rarity, class
       </defs>
       
       <g style={{ filter: 'url(#premium-glow)' }} fill="none" stroke={`url(#wing-grad-${rarity})`} strokeLinecap="round">
-        {/* NOYAU CENTRAL (Le lien) */}
         <g transform="translate(300, 120)">
           <path d="M-10 -30 L10 -30 L15 0 L10 30 L-10 30 L-15 0 Z" strokeWidth="1" opacity="0.3" />
           <circle cx="0" cy="0" r="8" strokeWidth="2" opacity="0.6" />
           <path d="M0 -40 L0 -60 M0 40 L0 60" strokeWidth="1" opacity="0.4" />
         </g>
-
-        {/* AILE GAUCHE */}
         <g transform="translate(285, 120) scale(-1, 1)">
-          {/* Forme Principale */}
           <path d="M0 0 C60 -60, 180 -100, 260 -20 C220 -10, 120 0, 0 0 Z" strokeWidth="2.5" />
-          {/* Détails Tribaux */}
           <path d="M20 15 C60 40, 140 80, 210 90 C180 70, 100 50, 20 15" opacity="0.6" strokeWidth="1.5" />
           <path d="M40 -10 C90 -40, 160 -50, 200 -30" opacity="0.4" strokeWidth="1" />
           <path d="M10 30 L50 60" opacity="0.2" strokeWidth="1" />
         </g>
-        
-        {/* AILE DROITE */}
         <g transform="translate(315, 120)">
           <path d="M0 0 C60 -60, 180 -100, 260 -20 C220 -10, 120 0, 0 0 Z" strokeWidth="2.5" />
           <path d="M20 15 C60 40, 140 80, 210 90 C180 70, 100 50, 20 15" opacity="0.6" strokeWidth="1.5" />
@@ -161,13 +155,30 @@ const App: React.FC = () => {
   const checkDailyLogin = () => {
     const today = new Date().toISOString().split('T')[0];
     if (stats.lastLoginDate === today) return;
+    
     let newStreak = 1;
     if (stats.lastLoginDate) {
       const diff = Math.ceil(Math.abs(new Date(today).getTime() - new Date(stats.lastLoginDate).getTime()) / (1000 * 3600 * 24));
       if (diff === 1) newStreak = stats.streak + 1;
     }
+
+    // Daily bonus
     const bonusXp = 20 + (newStreak * 5);
-    addXp(bonusXp, `Assiduité : ${newStreak} jours`);
+    updateXp(bonusXp);
+    addNotification("Série Quotidienne", `Flamme de ${newStreak} jours ! +${bonusXp} XP.`, 'xp');
+
+    // Milestone bonuses
+    if (newStreak === 7) {
+      updateXp(100);
+      addNotification("Palier de Série", "Semaine de Fer atteinte ! +100 XP.", 'level');
+    } else if (newStreak === 30) {
+      updateXp(500);
+      addNotification("Palier de Série", "Mois de Maîtrise atteint ! +500 XP.", 'level');
+    } else if (newStreak === 100) {
+      updateXp(2000);
+      addNotification("Palier de Série", "Centenaire de Lumière ! +2000 XP.", 'level');
+    }
+
     setStats(prev => ({ ...prev, streak: newStreak, lastLoginDate: today }));
   };
 
@@ -182,10 +193,12 @@ const App: React.FC = () => {
     setTimeout(() => setXpPopups(prev => prev.filter(p => p.id !== id)), 2000);
   };
 
-  const addXp = (amount: number, reason: string) => {
+  const updateXp = (amount: number) => {
     setStats(prev => {
       let newXp = prev.xp + amount;
       let newLevel = prev.level;
+      
+      // Level Up logic
       let xpNeeded = newLevel * 100;
       while (newXp >= xpNeeded && newLevel < MAX_LEVEL) {
         newXp -= xpNeeded;
@@ -193,8 +206,24 @@ const App: React.FC = () => {
         xpNeeded = newLevel * 100;
         addNotification("Ascension", `Niveau ${newLevel} atteint`, 'level');
       }
-      triggerXpFeedback(amount);
-      return { ...prev, xp: newXp, level: newLevel, totalXp: (prev.totalXp || 0) + amount };
+
+      // Level Down logic
+      while (newXp < 0 && newLevel > 1) {
+        newLevel--;
+        let prevXpNeeded = newLevel * 100;
+        newXp = prevXpNeeded + newXp;
+      }
+      
+      if (newXp < 0) newXp = 0;
+
+      if (amount > 0) triggerXpFeedback(amount);
+      
+      return { 
+        ...prev, 
+        xp: newXp, 
+        level: newLevel, 
+        totalXp: Math.max(0, (prev.totalXp || 0) + amount) 
+      };
     });
   };
 
@@ -231,21 +260,27 @@ const App: React.FC = () => {
   const toggleHabit = (id: string) => {
     setHabits(prev => prev.map(h => {
       if (h.id === id) {
-        if (!h.completed) {
-          addXp(XP_PER_HABIT, h.name);
+        const isNowCompleted = !h.completed;
+        const xpAmount = HABIT_XP_VALUES[h.difficulty || Difficulty.MEDIUM];
+        if (isNowCompleted) {
+          updateXp(xpAmount);
           setStats(s => ({ ...s, totalHabitsCompleted: s.totalHabitsCompleted + 1 }));
+        } else {
+          updateXp(-xpAmount);
+          setStats(s => ({ ...s, totalHabitsCompleted: Math.max(0, s.totalHabitsCompleted - 1) }));
         }
-        return { ...h, completed: !h.completed };
+        return { ...h, completed: isNowCompleted };
       }
       return h;
     }));
   };
 
   const currentTitle = HEROIC_TITLES.find(t => t.id === stats.selectedTitleId) || HEROIC_TITLES[0];
-  const levelProgress = (stats.xp / (stats.level * 100)) * 100;
+  const xpNeeded = stats.level * 100;
+  const levelProgress = (stats.xp / xpNeeded) * 100;
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-white pb-28 relative overflow-x-hidden shadow-2xl">
+    <div className="max-w-md mx-auto min-h-screen bg-white pb-28 relative overflow-x-hidden shadow-2xl text-slate-900">
       <canvas ref={canvasRef} width="1080" height="1920" className="hidden" />
       
       <style>{`
@@ -275,7 +310,6 @@ const App: React.FC = () => {
           </button>
           
           <div className="flex-grow flex flex-col items-center relative py-8">
-             {/* SYSTÈME D'AILES LIÉES */}
              <div className="absolute inset-0 flex items-center justify-center wings-container -z-10 overflow-visible">
                 <Wings rarity={currentTitle.rarity} className="w-[500px] h-auto transform scale-110" />
              </div>
@@ -299,6 +333,10 @@ const App: React.FC = () => {
         </div>
 
         <div className="relative flex flex-col items-center max-w-[320px] mx-auto">
+          <div className="w-full flex justify-between items-center mb-2 px-1">
+             <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Niveau {stats.level}</span>
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stats.xp} / {xpNeeded} XP</span>
+          </div>
           <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden relative mb-5 shadow-inner">
             <div className="bg-gradient-to-r from-indigo-500 to-indigo-700 h-full transition-all duration-1000 ease-out" style={{ width: `${levelProgress}%` }} />
           </div>
@@ -313,6 +351,8 @@ const App: React.FC = () => {
       <main className="px-6 py-6">
         {activeTab === 'home' && (
           <div className="space-y-10">
+            <StreakCard streak={stats.streak} lastLoginDate={stats.lastLoginDate} />
+            
             <div className="flex justify-between items-center">
                <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase text-[12px]">Grille d'Aventure</h2>
                <button onClick={() => { setEditingHabit(null); setIsHabitModalOpen(true); }} className="w-12 h-12 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-100 transition-all active:scale-95">
@@ -355,8 +395,12 @@ const App: React.FC = () => {
                  </div>
                ) : (
                  challenges.map(c => <ChallengeCard key={c.id} challenge={c} onEdit={setEditingChallenge} onDelete={(id) => setChallenges(challenges.filter(x => x.id !== id))} onCheckIn={(id) => {
-                   setChallenges(challenges.map(x => x.id === id ? { ...x, currentDay: x.currentDay + 1, lastCompletedDate: new Date().toISOString().split('T')[0] } : x));
-                   addXp(XP_PER_CHALLENGE_DAY, c.title);
+                   const challenge = challenges.find(x => x.id === id);
+                   if (challenge) {
+                     const xpAmount = CHALLENGE_XP_VALUES[challenge.difficulty || Difficulty.MEDIUM];
+                     setChallenges(challenges.map(x => x.id === id ? { ...x, currentDay: x.currentDay + 1, lastCompletedDate: new Date().toISOString().split('T')[0] } : x));
+                     updateXp(xpAmount);
+                   }
                  }} />)
                )}
              </div>

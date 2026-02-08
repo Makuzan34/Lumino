@@ -6,14 +6,31 @@ export enum Category {
   NIGHT = 'NIGHT'
 }
 
+export enum Recurrence {
+  NONE = 'NONE',
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY'
+}
+
+export enum Difficulty {
+  EASY = 'EASY',
+  MEDIUM = 'MEDIUM',
+  HARD = 'HARD',
+  HEROIC = 'HEROIC'
+}
+
 export interface Habit {
   id: string;
   name: string;
+  description?: string;
   category: Category;
   completed: boolean;
   time?: string;
   dueDate: string | null;
   icon: string;
+  recurrence: Recurrence;
+  difficulty: Difficulty;
 }
 
 export interface Challenge {
@@ -25,6 +42,7 @@ export interface Challenge {
   lastCompletedDate?: string;
   icon: string;
   color: string;
+  difficulty: Difficulty;
 }
 
 export interface Notification {
@@ -42,7 +60,7 @@ export interface HeroicTitle {
   id: string;
   name: string;
   description: string;
-  requirementText: string; // Nouvelle propriété
+  requirementText: string;
   rarity: Rarity;
   condition: (stats: UserStats) => boolean;
 }

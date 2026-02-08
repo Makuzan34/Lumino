@@ -1,8 +1,30 @@
 
-import { Category, Habit, Challenge, HeroicTitle, Rarity } from './types';
+import { Category, Habit, Challenge, HeroicTitle, Rarity, Recurrence, Difficulty } from './types';
 
-export const XP_PER_HABIT = 15;
-export const XP_PER_CHALLENGE_DAY = 50;
+export const XP_PER_HABIT = 15; // Base, mais on utilise le record ci-dessous
+export const XP_PER_CHALLENGE_DAY = 50; // Base
+
+export const HABIT_XP_VALUES: Record<Difficulty, number> = {
+  [Difficulty.EASY]: 5,
+  [Difficulty.MEDIUM]: 15,
+  [Difficulty.HARD]: 35,
+  [Difficulty.HEROIC]: 75
+};
+
+export const CHALLENGE_XP_VALUES: Record<Difficulty, number> = {
+  [Difficulty.EASY]: 25,
+  [Difficulty.MEDIUM]: 50,
+  [Difficulty.HARD]: 120,
+  [Difficulty.HEROIC]: 250
+};
+
+export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+  [Difficulty.EASY]: 'Facile',
+  [Difficulty.MEDIUM]: 'Moyen',
+  [Difficulty.HARD]: 'Difficile',
+  [Difficulty.HEROIC]: 'Héroïque'
+};
+
 export const XP_CHALLENGE_COMPLETE = 200;
 export const MAX_LEVEL = 100;
 
@@ -105,14 +127,15 @@ const generateQuestLibrary = (): Omit<Challenge, 'id' | 'currentDay' | 'lastComp
   for (let i = 0; i < 1000; i++) {
     const theme = questThemes[i % questThemes.length];
     const suffix = suffixes[Math.floor(i / questThemes.length) % suffixes.length];
-    const duration = 21 + (Math.floor(i / 100) * 7); // De 21 à 90 jours environ
+    const duration = 21 + (Math.floor(i / 100) * 7);
     
     quests.push({
       title: `${theme.t} ${suffix}`,
       description: `[Thématique: ${theme.topic}] ${theme.d} Maintenez la discipline pendant ${duration} jours.`,
       duration: duration,
       icon: theme.i,
-      color: theme.c
+      color: theme.c,
+      difficulty: Difficulty.MEDIUM
     });
   }
   return quests;
@@ -121,7 +144,6 @@ const generateQuestLibrary = (): Omit<Challenge, 'id' | 'currentDay' | 'lastComp
 export const QUEST_LIBRARY = generateQuestLibrary();
 
 export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }[] = [
-  // FINANCE
   { name: "Analyse du Trésor", icon: "💰", category: Category.MORNING },
   { name: "Scellage des Dépenses", icon: "🛡️", category: Category.EVENING },
   { name: "Offrande à l'Épargne", icon: "🏦", category: Category.MORNING },
@@ -142,8 +164,6 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
   { name: "Lecture de l'Or", icon: "📙", category: Category.EVENING },
   { name: "Protection du Butin", icon: "🔒", category: Category.NIGHT },
   { name: "Audit de l'Héritage", icon: "📜", category: Category.AFTERNOON },
-
-  // WELLNESS
   { name: "Rituel de Méditation", icon: "🧘", category: Category.MORNING },
   { name: "Bain de Renaissance", icon: "🛀", category: Category.NIGHT },
   { name: "Hydratation de Vie", icon: "💧", category: Category.MORNING },
@@ -164,8 +184,6 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
   { name: "Affirmations de Pouvoir", icon: "🗣️", category: Category.MORNING },
   { name: "Spa de l'Aube", icon: "✨", category: Category.MORNING },
   { name: "Refuge Sensoriel", icon: "🕯️", category: Category.NIGHT },
-
-  // SELF IMPROVEMENT
   { name: "Écriture de Légende", icon: "✍️", category: Category.MORNING },
   { name: "Lecture de Grimoires", icon: "📖", category: Category.EVENING },
   { name: "Apprentissage d'Arcanes", icon: "🧠", category: Category.MORNING },
@@ -186,8 +204,6 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
   { name: "Modestie du Sage", icon: "🌾", category: Category.NIGHT },
   { name: "Confiance de Titan", icon: "⚡", category: Category.MORNING },
   { name: "Leadership de Roi", icon: "👑", category: Category.AFTERNOON },
-
-  // ORGANIZATION
   { name: "Nettoyage du Sanctuaire", icon: "🧹", category: Category.AFTERNOON },
   { name: "Tri des Reliques", icon: "📂", category: Category.EVENING },
   { name: "Planification d'Assaut", icon: "📅", category: Category.MORNING },
@@ -208,8 +224,6 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
   { name: "Décoration Sanctuaire", icon: "🖼️", category: Category.AFTERNOON },
   { name: "Fleurs de l'Autel", icon: "💐", category: Category.MORNING },
   { name: "Arrosage du Domaine", icon: "🚿", category: Category.MORNING },
-
-  // WORKING
   { name: "Labeur Concentré", icon: "⚙️", category: Category.MORNING },
   { name: "Conseil de Guerre", icon: "👥", category: Category.AFTERNOON },
   { name: "Rédaction de Rapports", icon: "📄", category: Category.AFTERNOON },
@@ -230,8 +244,6 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
   { name: "Vision Stratégique", icon: "🔭", category: Category.MORNING },
   { name: "Bilan Hebdomadaire", icon: "🏁", category: Category.EVENING },
   { name: "Clôture du Chantier", icon: "🚧", category: Category.EVENING },
-
-  // STUDYING
   { name: "Savoir des Anciens", icon: "📜", category: Category.MORNING },
   { name: "Flashcards Magiques", icon: "🃏", category: Category.AFTERNOON },
   { name: "Lecture de Thèses", icon: "📓", category: Category.EVENING },
@@ -252,8 +264,6 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
   { name: "Botanique Magique", icon: "🍃", category: Category.MORNING },
   { name: "Apprendre à Apprendre", icon: "💡", category: Category.NIGHT },
   { name: "Débat d'idées", icon: "💬", category: Category.AFTERNOON },
-
-  // MUSIC
   { name: "Pratique de la Luth", icon: "🪕", category: Category.EVENING },
   { name: "Composition de Chant", icon: "🎼", category: Category.EVENING },
   { name: "Solfège des Sphères", icon: "🎵", category: Category.MORNING },
@@ -274,8 +284,6 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
   { name: "Mémoriser Paroles", icon: "🧠", category: Category.EVENING },
   { name: "Nettoyer Instrument", icon: "🧽", category: Category.AFTERNOON },
   { name: "Performance Solo", icon: "🌟", category: Category.NIGHT },
-
-  // OUTDOOR
   { name: "Marche en Forêt", icon: "🌲", category: Category.AFTERNOON },
   { name: "Vélo des Plaines", icon: "🚲", category: Category.MORNING },
   { name: "Jardinage Zen", icon: "🌻", category: Category.MORNING },
@@ -296,8 +304,6 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
   { name: "Balade au Clair Lune", icon: "🌙", category: Category.NIGHT },
   { name: "Course à Pied", icon: "👟", category: Category.MORNING },
   { name: "Parkour Urbain", icon: "🏙️", category: Category.AFTERNOON },
-
-  // TRAVELLING
   { name: "Préparer le Bagage", icon: "🧳", category: Category.EVENING },
   { name: "Planifier l'Odyssée", icon: "🗺️", category: Category.MORNING },
   { name: "Check Billets Volants", icon: "🎟️", category: Category.AFTERNOON },
@@ -318,8 +324,6 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
   { name: "Vidéos de l'Aventure", icon: "🎥", category: Category.NIGHT },
   { name: "Cartes Postales", icon: "✉️", category: Category.EVENING },
   { name: "Itinéraire Sac à Dos", icon: "🗺️", category: Category.NIGHT },
-
-  // SOCIAL & OTHERS
   { name: "Dîner de Guilde", icon: "🍽️", category: Category.EVENING },
   { name: "Appel aux Proches", icon: "📞", category: Category.EVENING },
   { name: "Jeux de Société", icon: "🎲", category: Category.EVENING },
@@ -343,12 +347,12 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
 ];
 
 export const DEFAULT_HABITS: Habit[] = [
-  { id: '1', name: "L'Appel de l'Eau", category: Category.MORNING, completed: false, time: '07:30', dueDate: null, icon: '💧' },
-  { id: '2', name: "Dressage du Nid", category: Category.MORNING, completed: false, time: '07:45', dueDate: null, icon: '🛏️' },
+  { id: '1', name: "L'Appel de l'Eau", category: Category.MORNING, completed: false, time: '07:30', dueDate: null, icon: '💧', recurrence: Recurrence.DAILY, difficulty: Difficulty.EASY },
+  { id: '2', name: "Dressage du Nid", category: Category.MORNING, completed: false, time: '07:45', dueDate: null, icon: '🛏️', recurrence: Recurrence.DAILY, difficulty: Difficulty.EASY },
 ];
 
 export const DEFAULT_CHALLENGES: Challenge[] = [
-  { id: 'c1', title: 'Le Chemin de la Fortune', description: 'Dominez vos finances pour libérer votre esprit.', duration: 21, currentDay: 0, icon: '💰', color: 'bg-emerald-600' }
+  { id: 'c1', title: 'Le Chemin de la Fortune', description: 'Dominez vos finances pour libérer votre esprit.', duration: 21, currentDay: 0, icon: '💰', color: 'bg-emerald-600', difficulty: Difficulty.MEDIUM }
 ];
 
 export const CATEGORY_LABELS: Record<Category, string> = {
