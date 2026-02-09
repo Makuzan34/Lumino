@@ -71,6 +71,7 @@ export interface UserStats {
   totalXp: number;
   streak: number;
   lastLoginDate: string | null;
+  lastRefreshDate: string | null;
   selectedTitleId?: string;
   unlockedTitleIds: string[];
   totalHabitsCompleted: number;

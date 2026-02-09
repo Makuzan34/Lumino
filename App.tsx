@@ -19,6 +19,7 @@ import AddTaskModal from './components/AddTaskModal';
 import AddChallengeModal from './components/AddChallengeModal';
 import ChallengeCard from './components/ChallengeCard';
 import StreakCard from './components/StreakCard';
+import WeeklyOverview from './components/WeeklyOverview';
 import { getDailyWellnessTip } from './services/geminiService';
 
 const Wings: React.FC<{ rarity: Rarity, className?: string }> = ({ rarity, className }) => {
@@ -97,6 +98,7 @@ const App: React.FC = () => {
       totalXp: 0, 
       streak: 0, 
       lastLoginDate: null,
+      lastRefreshDate: null,
       unlockedTitleIds: ['title-1'],
       selectedTitleId: 'title-1',
       totalHabitsCompleted: 0,
@@ -112,8 +114,9 @@ const App: React.FC = () => {
   });
 
   const [wellnessTip, setWellnessTip] = useState<string>('Le destin vous attend...');
-  const [activeTab, setActiveTab] = useState<'home' | 'focus' | 'challenges'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'weekly' | 'challenges' | 'focus'>('home');
   const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
+  const [targetDateForHabit, setTargetDateForHabit] = useState<string | null>(null);
   const [isChallengeModalOpen, setIsChallengeModalOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
@@ -134,10 +137,20 @@ const App: React.FC = () => {
     const fetchTip = async () => setWellnessTip(await getDailyWellnessTip());
     fetchTip();
     checkDailyLogin();
+    checkDailyRefresh();
   }, []);
 
   useEffect(() => { if (editingHabit) setIsHabitModalOpen(true); }, [editingHabit]);
   useEffect(() => { if (editingChallenge) setIsChallengeModalOpen(true); }, [editingChallenge]);
+
+  const checkDailyRefresh = () => {
+    const today = new Date().toISOString().split('T')[0];
+    if (stats.lastRefreshDate !== today) {
+      setHabits(prev => prev.map(h => ({ ...h, completed: false })));
+      setStats(prev => ({ ...prev, lastRefreshDate: today }));
+      addNotification("Nouveau Jour", "Vos tâches quotidiennes ont été réinitialisées. Prêt pour l'aventure ?", 'info');
+    }
+  };
 
   const checkTitleUnlocks = () => {
     const newlyUnlocked: string[] = [];
@@ -266,13 +279,24 @@ const App: React.FC = () => {
           updateXp(xpAmount);
           setStats(s => ({ ...s, totalHabitsCompleted: s.totalHabitsCompleted + 1 }));
         } else {
-          updateXp(-xpAmount);
+          // No XP deduction when "unboxing" (unchecking)
           setStats(s => ({ ...s, totalHabitsCompleted: Math.max(0, s.totalHabitsCompleted - 1) }));
         }
         return { ...h, completed: isNowCompleted };
       }
       return h;
     }));
+  };
+
+  const handleDuplicateHabit = (habit: Habit) => {
+    const newHabit = { 
+      ...habit, 
+      id: crypto.randomUUID(), 
+      name: `${habit.name} (Copie)`,
+      completed: false 
+    };
+    setHabits(prev => [...prev, newHabit]);
+    addNotification("Duplication", `Rituel dupliqué : ${habit.name}`, 'info');
   };
 
   const currentTitle = HEROIC_TITLES.find(t => t.id === stats.selectedTitleId) || HEROIC_TITLES[0];
@@ -348,29 +372,43 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="px-6 py-6">
+      <main className="px-6 py-6 min-h-[400px]">
         {activeTab === 'home' && (
           <div className="space-y-10">
             <StreakCard streak={stats.streak} lastLoginDate={stats.lastLoginDate} />
             
             <div className="flex justify-between items-center">
                <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase text-[12px]">Grille d'Aventure</h2>
-               <button onClick={() => { setEditingHabit(null); setIsHabitModalOpen(true); }} className="w-12 h-12 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-100 transition-all active:scale-95">
+               <button onClick={() => { setEditingHabit(null); setTargetDateForHabit(new Date().toISOString().split('T')[0]); setIsHabitModalOpen(true); }} className="w-12 h-12 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-100 transition-all active:scale-95">
                  <svg className="w-6 h-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                </button>
             </div>
             <div className="space-y-4">
-              {habits.length === 0 ? (
+              {habits.filter(h => !h.dueDate || h.dueDate === new Date().toISOString().split('T')[0]).length === 0 ? (
                 <div className="py-20 text-center bg-slate-50/30 rounded-[3rem] border-2 border-dashed border-slate-100">
                   <p className="text-slate-400 italic text-sm">Préparez vos prochaines quêtes.</p>
                 </div>
               ) : (
-                habits.map(h => (
+                habits.filter(h => !h.dueDate || h.dueDate === new Date().toISOString().split('T')[0]).map(h => (
                   <HabitCard key={h.id} habit={h} onToggle={toggleHabit} onDelete={(id) => setHabits(habits.filter(x => x.id !== id))} onEdit={setEditingHabit} />
                 ))
               )}
             </div>
           </div>
+        )}
+
+        {activeTab === 'weekly' && (
+          <WeeklyOverview 
+            habits={habits} 
+            onEdit={setEditingHabit} 
+            onDelete={(id) => setHabits(habits.filter(x => x.id !== id))} 
+            onDuplicate={handleDuplicateHabit}
+            onAddNew={(date) => { 
+              setEditingHabit(null); 
+              setTargetDateForHabit(date);
+              setIsHabitModalOpen(true); 
+            }}
+          />
         )}
 
         {activeTab === 'focus' && (
@@ -484,9 +522,12 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 py-6 px-12 flex justify-between max-w-md mx-auto z-40 rounded-t-[4rem] shadow-2xl">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 py-6 px-8 flex justify-between max-w-md mx-auto z-40 rounded-t-[4rem] shadow-2xl">
         <button onClick={() => setActiveTab('home')} className={`p-3 rounded-2xl transition-all ${activeTab === 'home' ? 'text-indigo-600 tab-active' : 'text-slate-300'}`}>
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+        </button>
+        <button onClick={() => setActiveTab('weekly')} className={`p-3 rounded-2xl transition-all ${activeTab === 'weekly' ? 'text-indigo-600 tab-active' : 'text-slate-300'}`}>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
         </button>
         <button onClick={() => setActiveTab('challenges')} className={`p-3 rounded-2xl transition-all ${activeTab === 'challenges' ? 'text-indigo-600 tab-active' : 'text-slate-300'}`}>
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
@@ -498,10 +539,11 @@ const App: React.FC = () => {
 
       <AddTaskModal 
         isOpen={isHabitModalOpen} 
-        onClose={() => { setIsHabitModalOpen(false); setEditingHabit(null); }} 
+        onClose={() => { setIsHabitModalOpen(false); setEditingHabit(null); setTargetDateForHabit(null); }} 
         onAdd={(h) => setHabits([...habits, h])} 
         onUpdate={(h) => setHabits(habits.map(x => x.id === h.id ? h : x))} 
         editingHabit={editingHabit} 
+        initialDate={targetDateForHabit}
       />
 
       <AddChallengeModal

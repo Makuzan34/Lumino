@@ -9,9 +9,10 @@ interface AddTaskModalProps {
   onAdd: (habit: Habit) => void;
   onUpdate: (habit: Habit) => void;
   editingHabit: Habit | null;
+  initialDate?: string | null;
 }
 
-const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, onUpdate, editingHabit }) => {
+const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, onUpdate, editingHabit, initialDate }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<Category>(Category.MORNING);
@@ -37,12 +38,12 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, onU
       setDescription('');
       setCategory(Category.MORNING);
       setTime('08:00');
-      setDueDate('');
-      setRecurrence(Recurrence.NONE);
+      setDueDate(initialDate || '');
+      setRecurrence(initialDate ? Recurrence.NONE : Recurrence.DAILY);
       setDifficulty(Difficulty.MEDIUM);
       setIcon('✨');
     }
-  }, [editingHabit, isOpen]);
+  }, [editingHabit, isOpen, initialDate]);
 
   if (!isOpen) return null;
 
