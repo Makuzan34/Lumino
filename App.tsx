@@ -82,7 +82,9 @@ const Wings: React.FC<{ rarity: Rarity, className?: string }> = ({ rarity, class
 const App: React.FC = () => {
   const [habits, setHabits] = useState<Habit[]>(() => {
     const saved = localStorage.getItem('lumino_habits');
-    return saved ? JSON.parse(saved) : DEFAULT_HABITS;
+    const initial = saved ? JSON.parse(saved) : DEFAULT_HABITS;
+    // Auto-organize by time on load
+    return initial.sort((a: Habit, b: Habit) => (a.time || '').localeCompare(b.time || ''));
   });
 
   const [challenges, setChallenges] = useState<Challenge[]>(() => {
@@ -125,6 +127,10 @@ const App: React.FC = () => {
   const [showTitleGallery, setShowTitleGallery] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Drag and drop state
+  const [draggedHabitId, setDraggedHabitId] = useState<string | null>(null);
+  const [draggedChallengeId, setDraggedChallengeId] = useState<string | null>(null);
+
   useEffect(() => { localStorage.setItem('lumino_habits', JSON.stringify(habits)); }, [habits]);
   useEffect(() => { localStorage.setItem('lumino_challenges', JSON.stringify(challenges)); }, [challenges]);
   useEffect(() => { 
@@ -148,7 +154,7 @@ const App: React.FC = () => {
     if (stats.lastRefreshDate !== today) {
       setHabits(prev => prev.map(h => ({ ...h, completed: false })));
       setStats(prev => ({ ...prev, lastRefreshDate: today }));
-      addNotification("Nouveau Jour", "Vos tâches quotidiennes ont été réinitialisées. Prêt pour l'aventure ?", 'info');
+      addNotification("Nouveau Jour", "Vos rituels quotidiens ont été réinitialisés.", 'info');
     }
   };
 
@@ -175,21 +181,16 @@ const App: React.FC = () => {
       if (diff === 1) newStreak = stats.streak + 1;
     }
 
-    // Daily bonus
     const bonusXp = 20 + (newStreak * 5);
     updateXp(bonusXp);
     addNotification("Série Quotidienne", `Flamme de ${newStreak} jours ! +${bonusXp} XP.`, 'xp');
 
-    // Milestone bonuses
     if (newStreak === 7) {
       updateXp(100);
       addNotification("Palier de Série", "Semaine de Fer atteinte ! +100 XP.", 'level');
     } else if (newStreak === 30) {
       updateXp(500);
       addNotification("Palier de Série", "Mois de Maîtrise atteint ! +500 XP.", 'level');
-    } else if (newStreak === 100) {
-      updateXp(2000);
-      addNotification("Palier de Série", "Centenaire de Lumière ! +2000 XP.", 'level');
     }
 
     setStats(prev => ({ ...prev, streak: newStreak, lastLoginDate: today }));
@@ -210,8 +211,6 @@ const App: React.FC = () => {
     setStats(prev => {
       let newXp = prev.xp + amount;
       let newLevel = prev.level;
-      
-      // Level Up logic
       let xpNeeded = newLevel * 100;
       while (newXp >= xpNeeded && newLevel < MAX_LEVEL) {
         newXp -= xpNeeded;
@@ -219,55 +218,15 @@ const App: React.FC = () => {
         xpNeeded = newLevel * 100;
         addNotification("Ascension", `Niveau ${newLevel} atteint`, 'level');
       }
-
-      // Level Down logic
       while (newXp < 0 && newLevel > 1) {
         newLevel--;
         let prevXpNeeded = newLevel * 100;
         newXp = prevXpNeeded + newXp;
       }
-      
       if (newXp < 0) newXp = 0;
-
       if (amount > 0) triggerXpFeedback(amount);
-      
-      return { 
-        ...prev, 
-        xp: newXp, 
-        level: newLevel, 
-        totalXp: Math.max(0, (prev.totalXp || 0) + amount) 
-      };
+      return { ...prev, xp: newXp, level: newLevel, totalXp: Math.max(0, (prev.totalXp || 0) + amount) };
     });
-  };
-
-  const handleDownloadAchievement = (title: HeroicTitle) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const gradient = ctx.createLinearGradient(0, 0, 1080, 1920);
-    gradient.addColorStop(0, '#0f172a');
-    gradient.addColorStop(1, '#1e293b');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 1080, 1920);
-    ctx.beginPath();
-    ctx.arc(540, 960, 400, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(99, 102, 241, 0.1)';
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 60px Inter';
-    ctx.fillText('LUMINO ACHIEVEMENT', 540, 600);
-    ctx.font = 'bold 120px Playfair Display';
-    ctx.fillStyle = title.rarity === 'legendary' ? '#f59e0b' : '#ffffff';
-    ctx.fillText(title.name.toUpperCase(), 540, 960);
-    ctx.font = '40px Inter';
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(title.description, 540, 1040);
-    const link = document.createElement('a');
-    link.download = `lumino_${title.id}.png`;
-    link.href = canvas.toDataURL();
-    link.click();
   };
 
   const toggleHabit = (id: string) => {
@@ -279,7 +238,6 @@ const App: React.FC = () => {
           updateXp(xpAmount);
           setStats(s => ({ ...s, totalHabitsCompleted: s.totalHabitsCompleted + 1 }));
         } else {
-          // No XP deduction when "unboxing" (unchecking)
           setStats(s => ({ ...s, totalHabitsCompleted: Math.max(0, s.totalHabitsCompleted - 1) }));
         }
         return { ...h, completed: isNowCompleted };
@@ -289,47 +247,55 @@ const App: React.FC = () => {
   };
 
   const handleDuplicateHabit = (habit: Habit) => {
-    const newHabit = { 
-      ...habit, 
-      id: crypto.randomUUID(), 
-      name: `${habit.name} (Copie)`,
-      completed: false 
-    };
-    setHabits(prev => [...prev, newHabit]);
+    const newHabit = { ...habit, id: crypto.randomUUID(), name: `${habit.name} (Copie)`, completed: false };
+    const newHabits = [...habits, newHabit].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    setHabits(newHabits);
     addNotification("Duplication", `Rituel dupliqué : ${habit.name}`, 'info');
   };
+
+  const sortHabitsByTime = (list: Habit[]) => {
+    return [...list].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  };
+
+  // Drag and Drop Handlers
+  const onHabitDragStart = (id: string) => setDraggedHabitId(id);
+  const onHabitDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (draggedHabitId === id) return;
+    const items = [...habits];
+    const draggedIdx = items.findIndex(h => h.id === draggedHabitId);
+    const overIdx = items.findIndex(h => h.id === id);
+    const [draggedItem] = items.splice(draggedIdx, 1);
+    items.splice(overIdx, 0, draggedItem);
+    setHabits(items);
+  };
+  const onHabitDrop = () => setDraggedHabitId(null);
+
+  const onChallengeDragStart = (id: string) => setDraggedChallengeId(id);
+  const onChallengeDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (draggedChallengeId === id) return;
+    const items = [...challenges];
+    const draggedIdx = items.findIndex(c => c.id === draggedChallengeId);
+    const overIdx = items.findIndex(c => c.id === id);
+    const [draggedItem] = items.splice(draggedIdx, 1);
+    items.splice(overIdx, 0, draggedItem);
+    setChallenges(items);
+  };
+  const onChallengeDrop = () => setDraggedChallengeId(null);
 
   const currentTitle = HEROIC_TITLES.find(t => t.id === stats.selectedTitleId) || HEROIC_TITLES[0];
   const xpNeeded = stats.level * 100;
   const levelProgress = (stats.xp / xpNeeded) * 100;
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const homeHabits = habits.filter(h => !h.dueDate || h.dueDate === todayStr);
+
   return (
     <div className="max-w-md mx-auto min-h-screen bg-white pb-28 relative overflow-x-hidden shadow-2xl text-slate-900">
-      <canvas ref={canvasRef} width="1080" height="1920" className="hidden" />
-      
-      <style>{`
-        @keyframes xpFloat { 0% { opacity:0; transform:translateY(0); } 20% { opacity:1; } 100% { opacity:0; transform:translateY(-100px); } }
-        .xp-p { position: fixed; z-index: 99; pointer-events: none; animation: xpFloat 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-        
-        @keyframes linkedBreath { 
-          0%, 100% { transform: scale(1) translateY(0); opacity: 0.6; } 
-          50% { transform: scale(1.05) translateY(-5px); opacity: 0.9; } 
-        }
-        .wings-container { animation: linkedBreath 8s ease-in-out infinite; }
-
-        .tab-active { position: relative; }
-        .tab-active::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
-      `}</style>
-
-      {xpPopups.map(p => (
-        <div key={p.id} className="xp-p" style={{ left: `${p.x}%`, top: '45%' }}>
-          <div className="bg-indigo-600 text-white font-bold px-5 py-2.5 rounded-2xl shadow-2xl border border-indigo-400">+{p.amount} XP</div>
-        </div>
-      ))}
-
       <header className="px-8 pt-16 pb-12 bg-white sticky top-0 z-30 overflow-hidden">
         <div className="flex justify-between items-center mb-16 relative z-10">
-          <button onClick={() => setShowNotificationCenter(true)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all shadow-sm">
+          <button onClick={() => setShowNotificationCenter(true)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-500">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
           </button>
           
@@ -337,13 +303,11 @@ const App: React.FC = () => {
              <div className="absolute inset-0 flex items-center justify-center wings-container -z-10 overflow-visible">
                 <Wings rarity={currentTitle.rarity} className="w-[500px] h-auto transform scale-110" />
              </div>
-             
              <div className="relative z-10 flex flex-col items-center">
                 <h1 onClick={() => setShowTitleGallery(true)} className="text-3xl font-display text-slate-900 cursor-pointer tracking-tighter">Lumino</h1>
                 <div className={`text-[9px] font-black uppercase tracking-[0.3em] mt-2 px-4 py-1 rounded-full ${
-                  currentTitle.rarity === 'legendary' ? 'text-indigo-600 bg-indigo-50 shadow-sm border border-indigo-100' : 
-                  currentTitle.rarity === 'epic' ? 'text-amber-600 bg-amber-50 shadow-sm border border-amber-100' : 
-                  currentTitle.rarity === 'rare' ? 'text-slate-600 bg-slate-50 shadow-sm border border-slate-200' :
+                  currentTitle.rarity === 'legendary' ? 'text-indigo-600 bg-indigo-50 border border-indigo-100' : 
+                  currentTitle.rarity === 'epic' ? 'text-amber-600 bg-amber-50 border border-amber-100' : 
                   'text-slate-400 bg-slate-50'
                 }`}>
                   {currentTitle.name}
@@ -357,17 +321,15 @@ const App: React.FC = () => {
         </div>
 
         <div className="relative flex flex-col items-center max-w-[320px] mx-auto">
-          <div className="w-full flex justify-between items-center mb-2 px-1">
-             <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Niveau {stats.level}</span>
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stats.xp} / {xpNeeded} XP</span>
+          <div className="w-full flex justify-between items-center mb-2 px-1 text-[10px] font-black uppercase tracking-widest">
+             <span className="text-indigo-600">Niveau {stats.level}</span>
+             <span className="text-slate-400">{stats.xp} / {xpNeeded} XP</span>
           </div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden relative mb-5 shadow-inner">
-            <div className="bg-gradient-to-r from-indigo-500 to-indigo-700 h-full transition-all duration-1000 ease-out" style={{ width: `${levelProgress}%` }} />
+          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-5">
+            <div className="bg-gradient-to-r from-indigo-500 to-indigo-700 h-full transition-all duration-1000" style={{ width: `${levelProgress}%` }} />
           </div>
-          <div className="bg-indigo-50/20 px-8 py-3 rounded-2xl border border-indigo-100/10 backdrop-blur-md">
-            <p className="text-indigo-900 text-[12px] font-bold italic text-center leading-tight">
-              "{wellnessTip}"
-            </p>
+          <div className="bg-indigo-50/20 px-8 py-3 rounded-2xl border border-indigo-100/10">
+            <p className="text-indigo-900 text-[12px] font-bold italic text-center leading-tight">"{wellnessTip}"</p>
           </div>
         </div>
       </header>
@@ -376,21 +338,31 @@ const App: React.FC = () => {
         {activeTab === 'home' && (
           <div className="space-y-10">
             <StreakCard streak={stats.streak} lastLoginDate={stats.lastLoginDate} />
-            
             <div className="flex justify-between items-center">
                <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase text-[12px]">Grille d'Aventure</h2>
-               <button onClick={() => { setEditingHabit(null); setTargetDateForHabit(new Date().toISOString().split('T')[0]); setIsHabitModalOpen(true); }} className="w-12 h-12 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-100 transition-all active:scale-95">
-                 <svg className="w-6 h-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-               </button>
+               <div className="flex gap-2">
+                 <button 
+                  onClick={() => setHabits(sortHabitsByTime(habits))}
+                  className="w-10 h-10 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 transition-colors"
+                  title="Trier par heure"
+                 >
+                   <svg className="w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+                 </button>
+                 <button onClick={() => { setEditingHabit(null); setTargetDateForHabit(todayStr); setIsHabitModalOpen(true); }} className="w-12 h-12 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-100 transition-all active:scale-95">
+                   <svg className="w-6 h-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                 </button>
+               </div>
             </div>
             <div className="space-y-4">
-              {habits.filter(h => !h.dueDate || h.dueDate === new Date().toISOString().split('T')[0]).length === 0 ? (
+              {homeHabits.length === 0 ? (
                 <div className="py-20 text-center bg-slate-50/30 rounded-[3rem] border-2 border-dashed border-slate-100">
                   <p className="text-slate-400 italic text-sm">Préparez vos prochaines quêtes.</p>
                 </div>
               ) : (
-                habits.filter(h => !h.dueDate || h.dueDate === new Date().toISOString().split('T')[0]).map(h => (
-                  <HabitCard key={h.id} habit={h} onToggle={toggleHabit} onDelete={(id) => setHabits(habits.filter(x => x.id !== id))} onEdit={setEditingHabit} />
+                homeHabits.map((h, idx) => (
+                  <div key={h.id} onDragOver={(e) => onHabitDragOver(e, h.id)} onDrop={onHabitDrop}>
+                    <HabitCard habit={h} onToggle={toggleHabit} onDelete={(id) => setHabits(habits.filter(x => x.id !== id))} onEdit={setEditingHabit} onDragStart={() => onHabitDragStart(h.id)} isDragging={draggedHabitId === h.id} />
+                  </div>
                 ))
               )}
             </div>
@@ -403,26 +375,16 @@ const App: React.FC = () => {
             onEdit={setEditingHabit} 
             onDelete={(id) => setHabits(habits.filter(x => x.id !== id))} 
             onDuplicate={handleDuplicateHabit}
-            onAddNew={(date) => { 
-              setEditingHabit(null); 
-              setTargetDateForHabit(date);
-              setIsHabitModalOpen(true); 
-            }}
+            onAddNew={(date) => { setEditingHabit(null); setTargetDateForHabit(date); setIsHabitModalOpen(true); }}
+            onReorder={setHabits}
           />
         )}
 
-        {activeTab === 'focus' && (
-          <div className="space-y-8">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase text-[12px]">Zone de Focus</h2>
-            <FocusTimer onSessionComplete={(m) => setStats(s => ({ ...s, totalFocusMinutes: s.totalFocusMinutes + m }))} />
-          </div>
-        )}
-        
         {activeTab === 'challenges' && (
           <div className="space-y-8">
              <div className="flex justify-between items-center">
                <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase text-[12px]">Grimoire de Quêtes</h2>
-               <button onClick={() => { setEditingChallenge(null); setIsChallengeModalOpen(true); }} className="w-12 h-12 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-100 transition-all active:scale-95">
+               <button onClick={() => { setEditingChallenge(null); setIsChallengeModalOpen(true); }} className="w-12 h-12 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-100 active:scale-95">
                  <svg className="w-6 h-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                </button>
              </div>
@@ -432,95 +394,30 @@ const App: React.FC = () => {
                    <p className="text-slate-400 italic text-sm">Le grimoire est vide.</p>
                  </div>
                ) : (
-                 challenges.map(c => <ChallengeCard key={c.id} challenge={c} onEdit={setEditingChallenge} onDelete={(id) => setChallenges(challenges.filter(x => x.id !== id))} onCheckIn={(id) => {
-                   const challenge = challenges.find(x => x.id === id);
-                   if (challenge) {
-                     const xpAmount = CHALLENGE_XP_VALUES[challenge.difficulty || Difficulty.MEDIUM];
-                     setChallenges(challenges.map(x => x.id === id ? { ...x, currentDay: x.currentDay + 1, lastCompletedDate: new Date().toISOString().split('T')[0] } : x));
-                     updateXp(xpAmount);
-                   }
-                 }} />)
+                 challenges.map(c => (
+                   <div key={c.id} onDragOver={(e) => onChallengeDragOver(e, c.id)} onDrop={onChallengeDrop}>
+                     <ChallengeCard challenge={c} onEdit={setEditingChallenge} onDelete={(id) => setChallenges(challenges.filter(x => x.id !== id))} onCheckIn={(id) => {
+                       const challenge = challenges.find(x => x.id === id);
+                       if (challenge) {
+                         const xpAmount = CHALLENGE_XP_VALUES[challenge.difficulty || Difficulty.MEDIUM];
+                         setChallenges(challenges.map(x => x.id === id ? { ...x, currentDay: x.currentDay + 1, lastCompletedDate: todayStr } : x));
+                         updateXp(xpAmount);
+                       }
+                     }} onDragStart={() => onChallengeDragStart(c.id)} isDragging={draggedChallengeId === c.id} />
+                   </div>
+                 ))
                )}
              </div>
           </div>
         )}
+
+        {activeTab === 'focus' && (
+          <div className="space-y-8">
+            <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase text-[12px]">Zone de Focus</h2>
+            <FocusTimer onSessionComplete={(m) => setStats(s => ({ ...s, totalFocusMinutes: s.totalFocusMinutes + m }))} />
+          </div>
+        )}
       </main>
-
-      {showTitleGallery && (
-        <div className="fixed inset-0 z-[100] bg-white p-8 overflow-y-auto animate-in slide-in-from-bottom duration-500">
-          <div className="flex justify-between items-center mb-10 sticky top-0 bg-white/95 backdrop-blur-md pt-4 pb-2 z-10">
-            <div>
-              <h3 className="text-3xl font-display text-slate-900">Le Panthéon</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                Symphonie de Pouvoir : {stats.unlockedTitleIds.length} / {HEROIC_TITLES.length}
-              </p>
-            </div>
-            <button onClick={() => setShowTitleGallery(false)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400">✕</button>
-          </div>
-          <div className="grid gap-6 pb-12">
-            {HEROIC_TITLES.map(title => {
-              const unlocked = stats.unlockedTitleIds.includes(title.id);
-              const active = stats.selectedTitleId === title.id;
-              return (
-                <div key={title.id} className={`p-8 rounded-[3rem] border transition-all duration-300 relative overflow-hidden flex flex-col items-center text-center ${
-                  unlocked 
-                    ? 'bg-white border-slate-100 shadow-xl' 
-                    : 'bg-slate-50 border-transparent opacity-60'
-                }`}>
-                  <div className="flex justify-between items-start w-full mb-4 z-10">
-                    <span className={`text-[9px] font-black uppercase tracking-widest ${
-                      title.rarity === 'legendary' ? 'text-indigo-600' : 
-                      title.rarity === 'epic' ? 'text-amber-500' : 
-                      title.rarity === 'rare' ? 'text-slate-500' :
-                      'text-slate-400'
-                    }`}>{title.rarity}</span>
-                    {unlocked && (
-                      <button onClick={() => handleDownloadAchievement(title)} className="text-slate-200 hover:text-indigo-600">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                      </button>
-                    )}
-                  </div>
-                  <h4 className={`text-xl font-bold mb-1 z-10 ${unlocked ? 'text-slate-900' : 'text-slate-400'}`}>{title.name}</h4>
-                  <p className="text-[10px] text-slate-500 mb-6 leading-relaxed z-10 italic">{title.description}</p>
-                  <div className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl mb-6 z-10 ${
-                    unlocked ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'
-                  }`}>
-                    {unlocked ? 'Éveillé ✨' : `Rituel requis : ${title.requirementText}`}
-                  </div>
-                  {unlocked && !active && (
-                    <button onClick={() => setStats(prev => ({ ...prev, selectedTitleId: title.id }))} className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all z-10">Revêtir le Titre</button>
-                  )}
-                  {active && <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest text-center py-4 bg-indigo-50 rounded-2xl w-full z-10 shadow-inner">Porté Actuellement</div>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {showNotificationCenter && (
-        <div className="fixed inset-0 z-[300] bg-slate-900/30 backdrop-blur-sm flex justify-end" onClick={() => setShowNotificationCenter(false)}>
-          <div className="bg-white w-full max-w-[340px] h-full shadow-2xl p-10 overflow-y-auto animate-in slide-in-from-right duration-500" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-12">
-              <h3 className="text-2xl font-bold text-slate-900">Écrits Anciens</h3>
-              <button onClick={() => setShowNotificationCenter(false)} className="w-10 h-10 flex items-center justify-center text-slate-300">✕</button>
-            </div>
-            <div className="space-y-8">
-              {notifications.length === 0 ? (
-                <div className="py-20 text-center text-slate-400 text-sm italic">Aucun message de la guilde</div>
-              ) : (
-                notifications.map(n => (
-                  <div key={n.id} className="pb-6 border-b border-slate-50 last:border-0">
-                    <h4 className="font-bold text-slate-900 text-sm">{n.title}</h4>
-                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{n.message}</p>
-                    <span className="text-[10px] text-slate-300 block mt-3 uppercase font-bold tracking-tight">{new Date(n.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 py-6 px-8 flex justify-between max-w-md mx-auto z-40 rounded-t-[4rem] shadow-2xl">
         <button onClick={() => setActiveTab('home')} className={`p-3 rounded-2xl transition-all ${activeTab === 'home' ? 'text-indigo-600 tab-active' : 'text-slate-300'}`}>
@@ -540,8 +437,8 @@ const App: React.FC = () => {
       <AddTaskModal 
         isOpen={isHabitModalOpen} 
         onClose={() => { setIsHabitModalOpen(false); setEditingHabit(null); setTargetDateForHabit(null); }} 
-        onAdd={(h) => setHabits([...habits, h])} 
-        onUpdate={(h) => setHabits(habits.map(x => x.id === h.id ? h : x))} 
+        onAdd={(h) => setHabits(sortHabitsByTime([...habits, h]))} 
+        onUpdate={(h) => setHabits(sortHabitsByTime(habits.map(x => x.id === h.id ? h : x)))} 
         editingHabit={editingHabit} 
         initialDate={targetDateForHabit}
       />
@@ -549,10 +446,7 @@ const App: React.FC = () => {
       <AddChallengeModal
         isOpen={isChallengeModalOpen}
         onClose={() => { setIsChallengeModalOpen(false); setEditingChallenge(null); }}
-        onAdd={(c) => { 
-          setChallenges([...challenges, c]);
-          addNotification("Rituel Commencé", `${c.title}`, 'quest');
-        }}
+        onAdd={(c) => setChallenges([...challenges, c])}
         onUpdate={(c) => setChallenges(challenges.map(x => x.id === c.id ? c : x))}
         editingChallenge={editingChallenge}
       />

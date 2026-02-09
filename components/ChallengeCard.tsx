@@ -8,9 +8,11 @@ interface ChallengeCardProps {
   onCheckIn: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (challenge: Challenge) => void;
+  onDragStart?: () => void;
+  isDragging?: boolean;
 }
 
-const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, onCheckIn, onDelete, onEdit }) => {
+const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, onCheckIn, onDelete, onEdit, onDragStart, isDragging }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const progress = Math.min((challenge.currentDay / challenge.duration) * 100, 100);
   const isCompletedToday = challenge.lastCompletedDate === new Date().toISOString().split('T')[0];
@@ -28,9 +30,22 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, onCheckIn, onD
   };
 
   return (
-    <div className="relative p-6 sm:p-8 rounded-[3rem] bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 group">
+    <div 
+      draggable
+      onDragStart={onDragStart}
+      className={`relative p-6 sm:p-8 rounded-[3rem] bg-white border border-slate-100 transition-all duration-300 group cursor-grab active:cursor-grabbing ${
+        isDragging ? 'opacity-20 scale-95 border-indigo-400 border-dashed' : 'hover:shadow-xl shadow-sm'
+      }`}
+    >
       <div className="flex justify-between items-start mb-6">
         <div className="flex items-center gap-4">
+          {/* Poignée de glissement */}
+          <div className="flex flex-col items-center justify-center text-slate-200 group-hover:text-slate-300">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M7 7h2v2H7V7zm0 4h2v2H7v-2zm0 4h2v2H7v-2zm4-8h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z" />
+            </svg>
+          </div>
+
           <div className={`w-14 h-14 rounded-3xl ${challenge.color} text-white flex items-center justify-center text-3xl shadow-xl shadow-slate-100`}>
             {challenge.icon}
           </div>
@@ -89,8 +104,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, onCheckIn, onD
 
       <div className="space-y-4">
         <div className="flex justify-between items-end text-[11px] font-black text-slate-400 uppercase tracking-widest">
-          <span>Progression de la Quête</span>
-          <span className="text-slate-900">{challenge.currentDay} / {challenge.duration} Jours</span>
+          <span>Progression</span>
+          <span className="text-slate-900">{challenge.currentDay} / {challenge.duration} j</span>
         </div>
         <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden shadow-inner">
           <div 
@@ -107,25 +122,11 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, onCheckIn, onD
           isFinished 
             ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
             : isCompletedToday
-            ? 'bg-slate-50 text-slate-300 border border-transparent'
-            : 'bg-slate-900 text-white shadow-xl shadow-slate-200 hover:bg-black'
+            ? 'bg-slate-50 text-slate-300'
+            : 'bg-slate-900 text-white hover:bg-black shadow-xl shadow-slate-200'
         }`}
       >
-        {isFinished ? (
-          <>
-            <span>Quête Accomplie</span>
-            <span>✨</span>
-          </>
-        ) : isCompletedToday ? (
-          <>
-            <span>Rituel Validé</span>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-            </svg>
-          </>
-        ) : (
-          <span>Valider Jour {challenge.currentDay + 1} (+{xpValue} XP)</span>
-        )}
+        {isFinished ? 'Quête Accomplie ✨' : isCompletedToday ? 'Rituel Validé ✅' : `Valider Jour ${challenge.currentDay + 1} (+${xpValue} XP)`}
       </button>
     </div>
   );

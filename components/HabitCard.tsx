@@ -8,9 +8,11 @@ interface HabitCardProps {
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (habit: Habit) => void;
+  onDragStart?: () => void;
+  isDragging?: boolean;
 }
 
-const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit }) => {
+const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit, onDragStart, isDragging }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const formatDate = (dateStr: string) => {
@@ -42,13 +44,23 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit
 
   return (
     <div 
-      className={`group flex flex-col p-4 rounded-[2rem] transition-all relative border ${
+      draggable
+      onDragStart={onDragStart}
+      className={`group flex flex-col p-4 rounded-[2rem] transition-all relative border cursor-grab active:cursor-grabbing ${
+        isDragging ? 'opacity-20 scale-95 border-indigo-400 border-dashed' : 
         habit.completed 
           ? 'bg-slate-50 border-slate-100 opacity-60' 
           : 'bg-white border-slate-100 shadow-sm hover:shadow-md'
       }`}
     >
       <div className="flex items-start w-full">
+        {/* Poignée de glissement */}
+        <div className="flex flex-col items-center justify-center mr-2 text-slate-200 group-hover:text-slate-300 transition-colors pt-1">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M7 7h2v2H7V7zm0 4h2v2H7v-2zm0 4h2v2H7v-2zm4-8h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z" />
+          </svg>
+        </div>
+
         <div 
           onClick={() => onToggle(habit.id)}
           className="text-2xl mr-4 cursor-pointer select-none grayscale-[0.5] group-hover:grayscale-0 transition-all pt-1"
@@ -68,9 +80,12 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit
                   <span className="text-[10px]" title="Récurrent">{getRecurrenceIcon(habit.recurrence)}</span>
                 )}
               </div>
-              <span className={`text-[8px] font-black uppercase tracking-widest ${getDifficultyColor(habit.difficulty)}`}>
-                {DIFFICULTY_LABELS[habit.difficulty]}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-[8px] font-black uppercase tracking-widest ${getDifficultyColor(habit.difficulty)}`}>
+                  {DIFFICULTY_LABELS[habit.difficulty]}
+                </span>
+                <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">{habit.time}</span>
+              </div>
             </div>
             {!habit.completed && (
               <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-tighter shrink-0">
@@ -93,11 +108,6 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit
                     Échéance: {formatDate(habit.dueDate)}
                   </span>
                 )}
-                {habit.recurrence !== Recurrence.NONE && (
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight flex items-center gap-1">
-                    {getRecurrenceIcon(habit.recurrence)} {habit.recurrence.toLowerCase()}
-                  </span>
-                )}
               </div>
             </div>
           )}
@@ -107,18 +117,16 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className={`p-2 text-slate-300 hover:text-indigo-500 transition-all ${isExpanded ? 'rotate-180' : ''}`}
-            aria-label={isExpanded ? "Réduire" : "Développer"}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
-          <div className="hidden group-hover:flex items-center space-x-1 animate-in fade-in duration-200">
+          <div className="hidden group-hover:flex items-center space-x-1">
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(habit); }}
-              className="p-2 text-slate-300 hover:text-indigo-500 transition-colors"
-              aria-label="Modifier"
+              className="p-2 text-slate-300 hover:text-indigo-500"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -126,8 +134,7 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, onDelete, onEdit
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(habit.id); }}
-              className="p-2 text-slate-300 hover:text-red-400 transition-colors"
-              aria-label="Supprimer"
+              className="p-2 text-slate-300 hover:text-red-400"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
