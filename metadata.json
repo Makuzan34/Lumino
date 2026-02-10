@@ -1,8 +1,5 @@
 {
   "name": "Lumino - Routine & Sérénité",
-  "description": "Une application de planification de routine quotidienne conçue pour l'équilibre, la productivité et le bien-être, propulsée par l'intelligence artificielle Gemini.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
+  "description": "Une application de planification de routine quotidienne conçue pour l'équilibre, la productivité et le bien-être.",
+  "requestFramePermissions": []
 }

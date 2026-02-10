@@ -20,6 +20,12 @@ export enum Difficulty {
   HEROIC = 'HEROIC'
 }
 
+export interface RecurrenceRule {
+  interval: number;
+  daysOfWeek?: number[]; 
+  dayOfMonth?: number;  
+}
+
 export interface Habit {
   id: string;
   name: string;
@@ -27,10 +33,16 @@ export interface Habit {
   category: Category;
   completed: boolean;
   time?: string;
+  startDate: string; 
   dueDate: string | null;
   icon: string;
   recurrence: Recurrence;
+  recurrenceRule?: RecurrenceRule;
   difficulty: Difficulty;
+  notifiedDate?: string;
+  completionHistory: string[]; // Dates au format ISO YYYY-MM-DD
+  currentStreak: number;
+  bestStreak: number;
 }
 
 export interface Challenge {
@@ -43,6 +55,21 @@ export interface Challenge {
   icon: string;
   color: string;
   difficulty: Difficulty;
+}
+
+export interface MoodLog {
+  date: string;
+  mood: number; // 1-5
+  energy: number; // 1-5
+}
+
+export interface GrowthInsight {
+  id: string;
+  title: string;
+  content: string;
+  category: 'psychologie' | 'productivité' | 'santé' | 'finance';
+  read: boolean;
+  timestamp: number;
 }
 
 export interface Notification {
@@ -77,5 +104,6 @@ export interface UserStats {
   totalHabitsCompleted: number;
   totalChallengesCompleted: number;
   totalFocusMinutes: number;
+  moodLogs: MoodLog[];
   userName?: string;
 }

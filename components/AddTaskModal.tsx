@@ -18,6 +18,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, onU
   const [category, setCategory] = useState<Category>(Category.MORNING);
   const [time, setTime] = useState('08:00');
   const [dueDate, setDueDate] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>('');
   const [recurrence, setRecurrence] = useState<Recurrence>(Recurrence.NONE);
   const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.MEDIUM);
   const [icon, setIcon] = useState('✨');
@@ -30,6 +31,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, onU
       setCategory(editingHabit.category);
       setTime(editingHabit.time || '08:00');
       setDueDate(editingHabit.dueDate || '');
+      setStartDate(editingHabit.startDate || new Date().toISOString().split('T')[0]);
       setRecurrence(editingHabit.recurrence || Recurrence.NONE);
       setDifficulty(editingHabit.difficulty || Difficulty.MEDIUM);
       setIcon(editingHabit.icon);
@@ -39,6 +41,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, onU
       setCategory(Category.MORNING);
       setTime('08:00');
       setDueDate(initialDate || '');
+      setStartDate(new Date().toISOString().split('T')[0]);
       setRecurrence(initialDate ? Recurrence.NONE : Recurrence.DAILY);
       setDifficulty(Difficulty.MEDIUM);
       setIcon('✨');
@@ -51,12 +54,14 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, onU
     e.preventDefault();
     if (!name.trim()) return;
 
+    // Added startDate to habitData to follow Habit interface
     const habitData = {
       name,
       description: description.trim() || undefined,
       category,
       time,
       dueDate: dueDate || null,
+      startDate: startDate || new Date().toISOString().split('T')[0],
       recurrence,
       difficulty,
       icon,
@@ -65,7 +70,15 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, onU
     if (editingHabit) {
       onUpdate({ ...editingHabit, ...habitData });
     } else {
-      const newHabit: Habit = { id: crypto.randomUUID(), ...habitData, completed: false };
+      // Added missing mandatory properties for the Habit interface
+      const newHabit: Habit = { 
+        id: crypto.randomUUID(), 
+        ...habitData, 
+        completed: false,
+        completionHistory: [],
+        currentStreak: 0,
+        bestStreak: 0
+      };
       onAdd(newHabit);
     }
     onClose();
@@ -147,13 +160,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, onU
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Moment</label>
-                <select 
-                  value={category} onChange={(e) => setCategory(e.target.value as Category)}
-                  className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 outline-none transition-all appearance-none text-slate-900 text-sm"
-                >
-                  {Object.entries(CATEGORY_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
-                </select>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Date de début</label>
+                <input 
+                  type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 outline-none transition-all text-slate-900 text-sm"
+                />
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Récurrence</label>
@@ -165,6 +176,18 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onAdd, onU
                   <option value={Recurrence.DAILY}>Quotidien</option>
                   <option value={Recurrence.WEEKLY}>Hebdomadaire</option>
                   <option value={Recurrence.MONTHLY}>Mensuel</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Moment</label>
+                <select 
+                  value={category} onChange={(e) => setCategory(e.target.value as Category)}
+                  className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 outline-none transition-all appearance-none text-slate-900 text-sm"
+                >
+                  {Object.entries(CATEGORY_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
                 </select>
               </div>
             </div>

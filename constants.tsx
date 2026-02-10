@@ -54,7 +54,9 @@ const generateTitles = (): HeroicTitle[] => {
     "Vagabond", "Sentinelle", "Apprenti", "Guerrier", "Mage", "Assassin", "Paladin", "Alchimiste", 
     "Chasseur", "Seigneur", "Invocateur", "Moine", "Barde", "Prêtre", "Ombre", "Chevalier", 
     "Archiviste", "Titan", "Rôdeur", "Éclaireur", "Gardien", "Druide", "Nécromancien", "Héraut",
-    "Oracle", "Vigile", "Berserker", "Lame", "Esprit", "Nomade", "Pèlerin", "Sage", "Maître"
+    "Oracle", "Vigile", "Berserker", "Lame", "Esprit", "Nomade", "Pèlerin", "Sage", "Maître",
+    "Souverain", "Inquisiteur", "Apôtre", "Templier", "Vanguard", "Régent", "Prétorien", "Avatar",
+    "Exilé", "Légat", "Prodige", "Héritier", "Sentinelle", "Faucheur", "Veilleur", "Céleste"
   ];
   const descriptors = [
     "des Brumes", "de l'Aube", "du Zénith", "du Crépuscule", "du Silence", "de Cristal", 
@@ -62,18 +64,22 @@ const generateTitles = (): HeroicTitle[] => {
     "de Mercure", "du Destin", "d'Émeraude", "du Savoir", "de Wyvernes", "de la Nuit", 
     "des Cieux", "de la Terre", "du Sang", "de l'Or", "des Tempêtes", "des Esprits", 
     "de la Faille", "du Chaos", "du Givre", "du Soleil Noir", "des Abysses", "de Flammes",
-    "du Vent d'Est", "des Anciens", "de la Forêt Blanche", "des Sables Rouges"
+    "du Vent d'Est", "des Anciens", "de la Forêt Blanche", "des Sables Rouges",
+    "de la Flamme Vive", "des Secrets Perdus", "du Chaos Originel", "de l'Astre Pur",
+    "des Profondeurs", "du Murmure Sourd", "de la Lumière Primordiale", "du Trône de Fer",
+    "des Marches Grises", "de l'Éclipse", "du Firmament", "de l'Infini", "du Phénix", "du Lion Noir"
   ];
 
   let idCounter = 1;
   const usedNames = new Set<string>();
-  while (titles.length < 200) {
+  while (titles.length < 300) {
     const base = baseNames[idCounter % baseNames.length];
     const desc = descriptors[Math.floor(idCounter / baseNames.length) % descriptors.length];
     const name = `${base} ${desc}`;
     if (!usedNames.has(name)) {
       usedNames.add(name);
-      const rarityIndex = Math.floor(idCounter / 50);
+      // Ajustement de la rareté pour 300 titres (4 tranches de 75)
+      const rarityIndex = Math.floor(titles.length / 75);
       const rarity: Rarity = rarityIndex === 0 ? 'common' : rarityIndex === 1 ? 'rare' : rarityIndex === 2 ? 'epic' : 'legendary';
       const type = idCounter % 4; 
       let condition: (s: any) => boolean;
@@ -347,8 +353,9 @@ export const HABIT_TEMPLATES: { name: string; icon: string; category: Category }
 ];
 
 export const DEFAULT_HABITS: Habit[] = [
-  { id: '1', name: "L'Appel de l'Eau", category: Category.MORNING, completed: false, time: '07:30', dueDate: null, icon: '💧', recurrence: Recurrence.DAILY, difficulty: Difficulty.EASY },
-  { id: '2', name: "Dressage du Nid", category: Category.MORNING, completed: false, time: '07:45', dueDate: null, icon: '🛏️', recurrence: Recurrence.DAILY, difficulty: Difficulty.EASY },
+  // Added mandatory properties to follow Habit interface
+  { id: '1', name: "L'Appel de l'Eau", category: Category.MORNING, completed: false, time: '07:30', startDate: '2024-01-01', dueDate: null, icon: '💧', recurrence: Recurrence.DAILY, difficulty: Difficulty.EASY, completionHistory: [], currentStreak: 0, bestStreak: 0 },
+  { id: '2', name: "Dressage du Nid", category: Category.MORNING, completed: false, time: '07:45', startDate: '2024-01-01', dueDate: null, icon: '🛏️', recurrence: Recurrence.DAILY, difficulty: Difficulty.EASY, completionHistory: [], currentStreak: 0, bestStreak: 0 },
 ];
 
 export const DEFAULT_CHALLENGES: Challenge[] = [
