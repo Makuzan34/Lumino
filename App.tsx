@@ -271,6 +271,14 @@ const App: React.FC = () => {
     setIsHabitModalOpen(true);
   };
 
+  const selectTitle = (titleId: string) => {
+    if (stats.unlockedTitleIds.includes(titleId)) {
+      setStats(prev => ({ ...prev, selectedTitleId: titleId }));
+      setShowTitleGallery(false);
+      addNotification("Titre Équipé", `Vous êtes désormais : ${HEROIC_TITLES.find(t => t.id === titleId)?.name}`, 'info');
+    }
+  };
+
   const todayStr = new Date().toISOString().split('T')[0];
   const currentTitle = HEROIC_TITLES.find(t => t.id === stats.selectedTitleId) || HEROIC_TITLES[0];
 
@@ -338,7 +346,7 @@ const App: React.FC = () => {
         {activeTab === 'focus' && <FocusTimer onSessionComplete={(m) => setStats(prev => ({ ...prev, totalFocusMinutes: prev.totalFocusMinutes + m }))} />}
       </main>
 
-      <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-white/80 backdrop-blur-xl border border-slate-200/50 py-3 px-6 flex justify-between rounded-3xl shadow-2xl z-50">
+      <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-sm max-w-sm bg-white/80 backdrop-blur-xl border border-slate-200/50 py-3 px-6 flex justify-between rounded-3xl shadow-2xl z-50">
         {[
           { id: 'home', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
           { id: 'growth', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2' },
@@ -354,17 +362,61 @@ const App: React.FC = () => {
       {showTitleGallery && (
         <div className="fixed inset-0 z-[100] bg-white p-8 overflow-y-auto animate-in slide-in-from-bottom duration-500">
           <div className="flex justify-between items-center mb-10"><h3 className="text-3xl font-display">Le Panthéon</h3><button onClick={() => setShowTitleGallery(false)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center">✕</button></div>
-          <div className="grid gap-6">
+          <p className="text-xs text-slate-400 uppercase font-black tracking-widest mb-6">Choisissez votre identité de héros</p>
+          <div className="grid gap-6 pb-20">
             {HEROIC_TITLES.map(title => {
               const unlocked = stats.unlockedTitleIds.includes(title.id);
+              const isSelected = stats.selectedTitleId === title.id;
               return (
-                <div key={title.id} className={`p-6 rounded-[2.5rem] border ${unlocked ? 'bg-white border-slate-100 shadow-xl' : 'opacity-40'}`}>
-                  <h4 className="text-lg font-bold">{title.name}</h4>
-                  <p className="text-[10px] text-slate-500 italic mb-4">{title.description}</p>
-                  <div className="text-[9px] font-black uppercase tracking-widest px-4 py-2 bg-slate-100 rounded-xl">{unlocked ? 'Éveillé ✨' : `Requis : ${title.requirementText}`}</div>
+                <div 
+                  key={title.id} 
+                  onClick={() => unlocked && selectTitle(title.id)}
+                  className={`p-6 rounded-[2.5rem] border transition-all cursor-pointer ${
+                    isSelected 
+                      ? 'bg-indigo-600 border-indigo-600 shadow-xl text-white' 
+                      : unlocked 
+                        ? 'bg-white border-slate-100 shadow-lg hover:border-indigo-200' 
+                        : 'opacity-40 bg-slate-50 border-transparent grayscale'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className={`text-lg font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>{title.name}</h4>
+                    {isSelected && <span className="text-[9px] font-black uppercase tracking-widest bg-white/20 px-2 py-1 rounded-lg">Équipé</span>}
+                  </div>
+                  <p className={`text-[10px] italic mb-4 ${isSelected ? 'text-indigo-100' : 'text-slate-500'}`}>{title.description}</p>
+                  <div className={`text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-xl text-center ${
+                    isSelected 
+                      ? 'bg-white/10' 
+                      : unlocked 
+                        ? 'bg-indigo-50 text-indigo-600' 
+                        : 'bg-slate-200 text-slate-400'
+                  }`}>
+                    {unlocked ? 'Éveillé ✨ (Appuyez pour équiper)' : `Requis : ${title.requirementText}`}
+                  </div>
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {showNotificationCenter && (
+        <div className="fixed inset-0 z-[100] bg-white p-8 overflow-y-auto animate-in slide-in-from-right duration-500">
+          <div className="flex justify-between items-center mb-10"><h3 className="text-3xl font-display">Mur des Hérauts</h3><button onClick={() => setShowNotificationCenter(false)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center">✕</button></div>
+          <div className="space-y-4">
+             {notifications.length === 0 ? (
+               <div className="text-center py-20 text-slate-300 italic">Le silence règne dans votre royaume...</div>
+             ) : (
+               notifications.map(n => (
+                 <div key={n.id} className={`p-5 rounded-3xl border ${n.read ? 'bg-slate-50 border-transparent opacity-60' : 'bg-white border-slate-100 shadow-sm'}`}>
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="font-bold text-sm">{n.title}</h4>
+                      <span className="text-[8px] font-black text-slate-300 uppercase">{new Date(n.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <p className="text-xs text-slate-500">{n.message}</p>
+                 </div>
+               ))
+             )}
           </div>
         </div>
       )}
